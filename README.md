@@ -65,8 +65,7 @@ This is the most minimal example of the `init.el` file:
 (elpaca 'avy)
 (elpaca 'pcre2el)
 
-(elpaca '(hel :host github :repo "anuvyklack/hel"
-              :files (:defaults "extensions/**/*.el"))
+(elpaca '(hel :host github :repo "anuvyklack/hel")
   (setopt inhibit-startup-screen t)
   (hel-mode))
 ```
@@ -78,8 +77,7 @@ This is the most minimal example of the `init.el` file:
 (straight-use-package 'avy)
 (straight-use-package 'pcre2el)
 
-(straight-use-package '(hel :host github :repo "anuvyklack/hel"
-                            :files (:defaults "extensions/**/*.el")))
+(straight-use-package '(hel :host github :repo "anuvyklack/hel"))
 (setopt inhibit-startup-screen t)
 (hel-mode)
 ```
@@ -135,11 +133,11 @@ This package is not one-to-one emulation. Some commands are implemented in sligh
 
 ## Extensions
 
-- [hel-leader](extensions/hel-leader)
-- [hel-org](extensions/hel-org)
-- [hel-paredit](extensions/hel-paredit)
-- [hel-vterm](extensions/hel-vterm)
-- [hel-agent-shell](extensions/hel-agent-shell)
+- [hel-leader](https://github.com/anuvyklack/hel-leader)
+- [hel-org](https://github.com/anuvyklack/hel-org)
+- [hel-paredit](https://github.com/anuvyklack/hel-paredit)
+- [hel-vterm](https://github.com/anuvyklack/hel-vterm)
+- [hel-agent-shell](https://github.com/anuvyklack/hel-agent-shell)
 
 ## Tips
 
