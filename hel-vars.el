@@ -400,9 +400,6 @@ list of categories."
 
 ;;; Variables
 
-(push (expand-file-name "extensions" (file-name-directory load-file-name))
-      load-path)
-
 (hel-defvar-local hel-mode-map-alist nil
   "Association list of keymaps for current Hel state.
 This symbol lies in `emulation-mode-map-alists' and its contents are updated
