@@ -145,18 +145,17 @@ in the command loop, and the fake cursors can pick up on those instead."
 
 ;; Fontification for Hel macros.
 (font-lock-add-keywords
- 'emacs-lisp-mode
- (eval-when-compile
-   `((,(concat "^\\s-*("
-               (regexp-opt '("hel-define-command") t)
-               "\\s-+\\(" (rx lisp-mode-symbol) "\\)")
-      (1 'font-lock-keyword-face)
-      (2 'font-lock-function-name-face nil t))
-     (,(concat "^\\s-*("
-               (regexp-opt '("hel-defvar-local") t)
-               "\\s-+\\(" (rx lisp-mode-symbol) "\\)")
-      (1 'font-lock-keyword-face)
-      (2 'font-lock-variable-name-face nil t)))))
+ 'emacs-lisp-mode (eval-when-compile
+                    `((,(concat "^\\s-*("
+                                (regexp-opt '("hel-define-command") t)
+                                "\\s-+\\(" (rx lisp-mode-symbol) "\\)")
+                       (1 'font-lock-keyword-face)
+                       (2 'font-lock-function-name-face nil t))
+                      (,(concat "^\\s-*("
+                                (regexp-opt '("hel-defvar-local") t)
+                                "\\s-+\\(" (rx lisp-mode-symbol) "\\)")
+                       (1 'font-lock-keyword-face)
+                       (2 'font-lock-variable-name-face nil t)))))
 
 ;; `emacs-lisp-mode' is inherited from `lisp-data-mode'.
 (add-hook 'lisp-data-mode-hook 'hel--emacs-lisp-mode-h)
@@ -374,7 +373,8 @@ If cursor is in read-only area, jump to prompt instead of deleting."
 (hel-advice-add 'previous-error :around #'hel-jump-command-a)
 
 (with-eval-after-load 'compile
-  (dolist (keymap (list compilation-minor-mode-map compilation-mode-map))
+  (dolist (keymap (list compilation-minor-mode-map
+                        compilation-mode-map))
     (hel-keymap-set keymap
       "o"   #'compilation-display-error
 
@@ -569,29 +569,31 @@ If cursor is in read-only area, jump to prompt instead of deleting."
 
 ;;;; special-mode
 
-(hel-keymap-set special-mode-map ;; :state 'motion
+(hel-keymap-set special-mode-map
   "h"   #'left-char
   "j"   #'next-line
   "k"   #'previous-line
   "l"   #'right-char
-
-  ;; Switch to Normal state. This allows you to select and copy arbitrary text
-  ;; in special modes, which is very handy.
-  "i"   #'hel-normal-state
-  ;; Use "zx" or "C-x C-s" to switch back to motion state.
-  ;; Saving special buffer has little sense, so we can reuse it.
-  "<remap> <save-buffer>" #'hel-motion-state
-
-  "g"   nil ; Unbind `revert-buffer'. We have it on "C-w r"
+  ;;
+  "g"   nil ; unbind `revert-buffer', we have it on "C-w r"
   "g a" #'describe-char
   "g r" #'revert-buffer          ; also "C-w r"
-  "g h" #'move-beginning-of-line ; also "C-a"
-  "g l" #'move-end-of-line       ; also "C-e"
-  "g g" #'beginning-of-buffer    ; also "<"
-  "G"   #'end-of-buffer)         ; also ">"
+  "g h" #'move-beginning-of-line ; native "C-a"
+  "g l" #'move-end-of-line       ; native "C-e"
+  "g g" #'beginning-of-buffer    ; native "<"
+  "G"   #'end-of-buffer          ; native ">"
+  ;;
+  ;; Switch to Normal state. This allows you to select and copy arbitrary text
+  ;; in special modes.
+  ;;   Bind it in base keymap instead of Motion state keymap, to not override
+  ;; the "i" key for major modes that inherit from special-mode.
+  "i"   #'hel-normal-state)
 
 (hel-keymap-set special-mode-map :state 'normal
-  "<escape>" #'hel-motion-state)
+  "<escape>" #'hel-motion-state
+  ;; Use "zx" or "C-x C-s" to switch back to motion state.
+  ;; Saving special buffer has little sense, so we can use it.
+  "<remap> <save-buffer>" #'hel-motion-state)
 
 ;;;; prog-mode
 
