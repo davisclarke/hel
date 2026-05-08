@@ -626,10 +626,6 @@ If cursor is in read-only area, jump to prompt instead of deleting."
 
 ;;;; VC
 
-(with-eval-after-load 'bug-reference
-  (hel-keymap-set bug-reference-map :state 'normal
-    "RET" #'bug-reference-push-button))
-
 (with-eval-after-load 'log-view
   (hel-keymap-set log-view-mode-map
     "j" #'log-view-msg-next
