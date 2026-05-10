@@ -663,6 +663,44 @@ If cursor is in read-only area, jump to prompt instead of deleting."
     "j" #'log-view-msg-next
     "k" #'log-view-msg-prev))
 
+;;;; which-key
+
+(with-eval-after-load 'which-key
+  ;; Do not display "C-w C-" keys duplicates in which-key popup.
+  (add-to-list 'which-key-replacement-alist
+               '(("^C-w C-[a-z]" . nil) . ignore))
+  ;; Do not display keys bound to following commands in which-key popup.
+  (let ((regexp (eval-when-compile
+                  (regexp-opt (-map #'symbol-name
+                                    '(hel-m-digit-argument
+                                      hel-mi-digit-argument
+                                      hel-ma-digit-argument
+                                      hel-m-negative-argument
+                                      hel-mi-negative-argument
+                                      hel-ma-negative-argument))))))
+    (add-to-list 'which-key-replacement-alist
+                 `((nil . ,regexp) . ignore)))
+  (let ((regexp (eval-when-compile
+                  (regexp-opt (-map #'symbol-name
+                                    '(hel-mark-a-surround
+                                      hel-mark-a-paren
+                                      hel-mark-a-bracket
+                                      hel-mark-a-curly
+                                      hel-mark-an-angle
+                                      hel-mark-a-double-quoted
+                                      hel-mark-a-single-quoted
+                                      hel-mark-a-back-quoted
+                                      hel-mark-inner-surround
+                                      hel-mark-inner-paren
+                                      hel-mark-inner-bracket
+                                      hel-mark-inner-curly
+                                      hel-mark-inner-angle
+                                      hel-mark-inner-double-quoted
+                                      hel-mark-inner-single-quoted
+                                      hel-mark-inner-back-quoted))))))
+    (add-to-list 'which-key-replacement-alist
+                 `((nil . ,regexp) . ignore))))
+
 ;;;; widget
 
 (defun hel-switch-to-normal-state-in-field-widget ()

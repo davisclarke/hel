@@ -1318,19 +1318,6 @@ already there."
   (negative-argument arg)
   (set-transient-map (keymap-lookup nil "m a")))
 
-;; Do not show keys bound to following commands in which-key popup.
-(with-eval-after-load 'which-key
-  (let ((regexp (eval-when-compile
-                  (regexp-opt (-map #'symbol-name
-                                    '(hel-m-digit-argument
-                                      hel-mi-digit-argument
-                                      hel-ma-digit-argument
-                                      hel-m-negative-argument
-                                      hel-mi-negative-argument
-                                      hel-ma-negative-argument))))))
-    (add-to-list 'which-key-replacement-alist
-                 `((nil . ,regexp) . ignore))))
-
 ;; miw
 (hel-define-command hel-mark-inner-word (count)
   :multiple-cursors t

@@ -429,11 +429,6 @@ use it."
   "C-x" #'scratch-buffer
   "C-z" #'bury-buffer)
 
-;; Don't show "C-w C-" duplicates in which-key popup.
-(with-eval-after-load 'which-key
-  (add-to-list 'which-key-replacement-alist
-               '(("^C-w C-[a-z]" . nil) . ignore)))
-
 ;;; Insert state
 
 (hel-keymap-global-set :state 'insert
