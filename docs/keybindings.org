@@ -56,8 +56,12 @@ In Motion state Hel provide service keys to control Emacs itself.
 
 - =C-w H=, =C-w J=, =C-w K=, =C-w L= :: Move window in direction.
 
-All window commands also work with =C-= prefix for convenience: =C-w C-s=, =C-w C-v=,
-etc.
+All window commands also duplicated with =C-= prefix for convenience: =C-w C-s=,
+=C-w C-v=, etc.
+
+A secondary prefix for window commands is available on =C-c w=. It is useful when
+the =C-w= prefix is unavailable, such as in terminal emulators, ~picture-mode~,
+and similar modes.
 
 ** Scrolling
 

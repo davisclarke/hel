@@ -666,9 +666,9 @@ If cursor is in read-only area, jump to prompt instead of deleting."
 ;;;; which-key
 
 (with-eval-after-load 'which-key
-  ;; Do not display "C-w C-" keys duplicates in which-key popup.
+  ;; Do not display "C-w C-" and "C-c w C-" keys duplicates in which-key popup.
   (add-to-list 'which-key-replacement-alist
-               '(("^C-w C-[a-z]" . nil) . ignore))
+               '(("^\\(?:C-c w\\|C-w\\) C-[a-z]" . nil) . ignore))
   ;; Do not display keys bound to following commands in which-key popup.
   (let ((regexp (eval-when-compile
                   (regexp-opt (-map #'symbol-name

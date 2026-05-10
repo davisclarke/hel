@@ -368,6 +368,9 @@ use it."
 (hel-keymap-global-set :state '(normal motion)
   "C-w" 'hel-window-map)
 
+(hel-keymap-global-set
+  "C-c w" 'hel-window-map)
+
 (hel-keymap-set hel-window-map
   ;; windows
   "RET" '("open next command in same window" . same-window-prefix)
