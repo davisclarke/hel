@@ -358,9 +358,9 @@ use it."
   "C-u" #'hel-smooth-scroll-up
   "C-e" #'hel-mix-scroll-line-down
   "C-y" #'hel-mix-scroll-line-up
-  "z z" #'hel-smooth-scroll-line-to-eye-level
-  "z t" #'hel-smooth-scroll-line-to-top
-  "z b" #'hel-smooth-scroll-line-to-bottom)
+  "z z" '("scroll to eye level" . hel-smooth-scroll-line-to-eye-level)
+  "z t" '("scroll to top" . hel-smooth-scroll-line-to-top)
+  "z b" '("scroll to bottom" . hel-smooth-scroll-line-to-bottom))
 
 ;;; C-w keys
 
@@ -393,18 +393,18 @@ use it."
   ;; buffers
   "r"   #'revert-buffer
   "d"   #'kill-current-buffer
-  "q"   #'hel-kill-current-buffer-and-window
-  "b"   #'clone-indirect-buffer-other-window
-  "B"   #'hel-clone-indirect-buffer-same-window
+  "q"   '("kill buffer and window" . hel-kill-current-buffer-and-window)
+  "b"   '("indirect buffer in other window" . clone-indirect-buffer-other-window)
+  "B"   '("indirect buffer in this window" . hel-clone-indirect-buffer-same-window)
   "z"   #'bury-buffer ; mnemonics: "z" is the last letter
   "x"   #'scratch-buffer
   ;; xref
   "g d" #'("find definitions in other window" . xref-find-definitions-other-window)
 
-  ":"   #'hel-execute-extended-command-other-window
-  "C-:" #'hel-execute-extended-command-for-buffer-other-window
-  "M-x" #'hel-execute-extended-command-other-window
-  "M-X" #'hel-execute-extended-command-for-buffer-other-window
+  ":"   '("execute in other window" . hel-execute-extended-command-other-window)
+  "C-:" '("execute for buffer in other window" . hel-execute-extended-command-for-buffer-other-window)
+  "M-x" '("execute in other window" . hel-execute-extended-command-other-window)
+  "M-X" '("execute for buffer in other window" . hel-execute-extended-command-for-buffer-other-window)
 
   ;; Duplicate all keys with ctrl prefix.
   "C-n" #'other-window-prefix
