@@ -24,12 +24,12 @@
 ;; overlay, restore all variables from it, execute command in this environment,
 ;; store point, mark and new state into fake cursor overlay.
 ;;
-;; Each command should has `multiple-cursors' symbol property. If it is
-;; `t' — command will be execute for all cursors. Any other value except
-;; `nil' — it will be executed only once for real (main) cursor. If
-;; `multiple-cursors' property is `nil' i.e. absent user will be prompted
-;; how execute this command and choosen value is permanently stored in
-;; `hel-whitelist-file' file.
+;; How command will be executed is controlled by the `multiple-cursors' symbol
+;; property with three cases:
+;; - t         for all cursors
+;; - nil       property explicitly set: only for the main cursor
+;; - no value  property not present: prompt the user and permanently store
+;;             the choice in `hel-whitelist-file'
 ;;
 ;; ID 0 is always corresponding to real cursor.
 
