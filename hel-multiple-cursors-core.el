@@ -185,7 +185,9 @@ It is likely that you need `hel-disable-multiple-cursors-mode', not this one."
   (when hel--max-cursors-original
     (setq hel-max-cursors-number hel--max-cursors-original
           hel--max-cursors-original nil))
-  (-each (hel-all-fake-cursors) #'hel--delete-fake-cursor))
+  (maphash (lambda (_ cursor)
+             (hel--delete-fake-cursor cursor))
+           hel--cursors-table))
 
 (defun hel-create-fake-cursor-from-point (&optional id)
   "Create a fake cursor with an optional fake region based on point and mark.
@@ -344,13 +346,13 @@ Return CURSOR."
 
 (defun hel-all-fake-cursors (&optional sort)
   "Return list with all fake cursors in current buffer.
-If SORT is non-nil sort cursors in order they are located in buffer."
-  (let ((cursors (hash-table-values hel--cursors-table)))
-    (if sort
-        (sort cursors (lambda (c1 c2)
-                        (< (overlay-get c1 'point)
-                           (overlay-get c2 'point))))
-      cursors)))
+If SORT is non-nil sort cursors in order they are located in the buffer."
+  (if sort
+      (sort (hash-table-values hel--cursors-table)
+            (lambda (c1 c2)
+              (< (overlay-get c1 'point)
+                 (overlay-get c2 'point))))
+    (hash-table-values hel--cursors-table)))
 
 (defun hel-cursor-with-id (id)
   "Return the cursor with the given ID if it is stil alive."
@@ -401,7 +403,7 @@ If SORT is non-nil sort cursors in order they are located in buffer."
   (not (hash-table-empty-p hel--cursors-table)))
 
 (defun hel-cursors-positions ()
-  "Return alist with positions data of all cursors.
+  "Return alist with positions of all selections.
 Alist containes cons cells:
 
     (ID . (POINT MARK))
@@ -409,22 +411,24 @@ Alist containes cons cells:
 MARK is nil if cursor has no region.
 
 Real cursor has ID 0 and is the first element (`car') of the list."
-  (let (alist)
-    (when hel-multiple-cursors-mode
-      (dolist (cursor (hel-all-fake-cursors))
-        (push (list (overlay-get cursor 'id) ;; id
-                    (marker-position (overlay-get cursor 'point)) ;; point
-                    (if (overlay-get cursor 'mark-active)
-                        (marker-position (overlay-get cursor 'mark)))) ;; mark
-              alist)))
-    ;; Real cursor
-    (push (list 0 (point) (if mark-active (marker-position (mark-marker))))
-          alist)
-    alist))
+  (cons
+   ;; Real cursor
+   (list 0 (point) (if mark-active (marker-position (mark-marker))))
+   ;; Fake cursors
+   (unless (hash-table-empty-p hel--cursors-table)
+     (let (alist)
+       (maphash (lambda (id cursor)
+                  (push (list id
+                              (marker-position (overlay-get cursor 'point))
+                              (if (overlay-get cursor 'mark-active)
+                                  (marker-position (overlay-get cursor 'mark))))
+                        alist))
+                hel--cursors-table)
+       alist))))
 
 (defun hel-place-cursors (cursors-positions)
   "Setup all cursors according to CURSORS-POSITIONS.
-CURSORS-POSITIONS is an alist of the form that `hel-cursors-positions' returns."
+CURSORS-POSITIONS is an alist as returned by `hel-cursors-positions'."
   (maphash (lambda (id cursor)
              (unless (assoc id cursors-positions #'eql)
                (hel--delete-fake-cursor cursor)))
