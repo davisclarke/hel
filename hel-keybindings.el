@@ -69,8 +69,8 @@ use it."
   "F"   #'hel-find-char-backward
   "t"   #'hel-till-char-forward
   "T"   #'hel-till-char-backward
-  "g s" #'hel-beginning-of-line-command
-  "g h" #'hel-first-non-blank
+  "g s" #'hel-first-non-blank
+  "g h" #'hel-beginning-of-line-command
   "g l" #'hel-end-of-line-command
   "g g" #'hel-beginning-of-buffer
   "G"   #'hel-end-of-buffer

@@ -102,9 +102,7 @@ This package is not one-to-one emulation. Some commands are implemented in sligh
 
 - You can restore last multiple selections with `gv`.
 
-- `gs`, `gh`, and `gl` make selections. This is done for convenience, since all other motions make selections. In Helix they only move the cursor without creating selection.
-
-- `gs` and `gh` are swapped: `gs` moves to the beginning of a line, `gh` moves to the beginning of a line skipping indentation.
+- `gs`, `gh`, and `gl` create selections. This is for consistency, since all other motions also create selections. In Helix they only move the cursor without creating a selection.
 
 - Keys that are relevant only when multiple cursors are present will be active only in that case (e.g. `K`, `,`, `&` — full list is in `hel-multiple-cursors-mode-map` keymap). This allows to reuse, for example, `K` for documentation lookup or `,` for localleader when there is only one cursor in the buffer.
 
@@ -141,7 +139,7 @@ This package is not one-to-one emulation. Some commands are implemented in sligh
 
 ## Tips
 
-- By default, Hel uses a bar cursor for Normal state and a box cursor for Insert state—the opposite of what Vim does. Your first instinct may be to switch them back to what you're used to, but I recommend not doing so. This was the first I done myself, and went through all the stages of acceptance, give default settings a try — the bar cursor is better suited for Normal state.
+- By default, Hel uses a bar cursor for Normal state and a box cursor for Insert state — the opposite of what Vim does. Your first instinct may be to switch them back to what you're used to, but I recommend not doing so. This was the first I done myself, and went through all the stages of acceptance, give default settings a try — the bar cursor is better suited for Normal state.
 
 - You can set localleader keymap to `,`. It will act as the local leader while there is only one cursor in the buffer, and will delete all secondary cursors when there are multiple cursors.
 
