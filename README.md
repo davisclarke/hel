@@ -106,10 +106,11 @@ This package is not one-to-one emulation. Some commands are implemented in sligh
 
 - Keys that are relevant only when multiple cursors are present will be active only in that case (e.g. `K`, `,`, `&` — full list is in `hel-multiple-cursors-mode-map` keymap). This allows to reuse, for example, `K` for documentation lookup or `,` for localleader when there is only one cursor in the buffer.
 
-- `gg` / `G` to go to the first/last line of the buffer like in Vim.
-  Helix uses `gg` / `ge`.
-
 - Scrolling keybindings are taken from Vim instead of Helix.
+
+- `gg` and `G` are taken from Vim. With numeric argument:
+  - `gg` — goes to N/10 of the way from the beginning of the buffer;
+  - `G` — goes lo line N.
 
 - Six easymotion commands are provided:
   - `gw` / `gb` — chose and mark word forward/backward.

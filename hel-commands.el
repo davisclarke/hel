@@ -154,14 +154,16 @@ Push mark at previous position, unless extending selection."
     (recenter 0)))
 
 ;; G
-(hel-define-command hel-end-of-buffer ()
-  "Move point the end of the buffer."
+(hel-define-command hel-end-of-buffer (count)
+  "Move point to the COUNT line, or to the end of the buffer."
   :multiple-cursors nil
-  (interactive)
+  (interactive "P")
   (hel-disable-multiple-cursors-mode)
   (hel-push-point)
   (hel-maybe-deactivate-mark)
-  (goto-char (point-max)))
+  (if count
+      (goto-line (prefix-numeric-value count))
+    (goto-char (point-max))))
 
 ;; gs
 (hel-define-command hel-beginning-of-line-command ()

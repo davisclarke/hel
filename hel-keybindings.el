@@ -73,6 +73,7 @@ use it."
   "g h" #'hel-beginning-of-line-command
   "g l" #'hel-end-of-line-command
   "g g" #'hel-beginning-of-buffer
+  "g e" #'hel-end-of-buffer
   "G"   #'hel-end-of-buffer
   "}"   #'hel-forward-paragraph
   "{"   #'hel-backward-paragraph

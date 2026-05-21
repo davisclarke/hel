@@ -133,7 +133,12 @@ All keys available in Motion state are also work in Normal state.
 
 - =gs= :: Move to the beginning of a line skipping indentation.
 
-- =gg= / =G= :: Go to the *first* / *last* line of the buffer.
+- =gg= ::
+  Move to the beginning of the buffer. With numeric argument go to N/10 of the
+  way from the beginning.
+
+- =ge= or =G= ::
+  Move to the end of the buffer. With a numeric argument, go to line N.
 
 - ={= / =}= or =[p= / =]p= :: Move over paragraphs.
 
