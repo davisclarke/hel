@@ -669,25 +669,33 @@ Without selection delete COUNT characters after point."
 ;; y
 (hel-define-command hel-copy ()
   (format "Copy selection into `kill-ring'.
-If there are multiple selections and they are not indetical, copy them to
-the `killed-rectangle'. You can paste them later with %s (`hel-paste-after')
-or `yank-rectangle'."
+
+With \\[universal-argument] append selection to the last item in the `kill-ring'.
+
+If there are multiple selections and they are not all the same — also
+copy them to the `killed-rectangle'. You can paste them later with %s
+(`hel-paste-after') or `yank-rectangle'.
+
+The copied text is filtered by `filter-buffer-substring' before it is saved
+in the kill ring."
           (propertize "M-u p" 'face 'help-key-binding))
   :multiple-cursors nil
   (interactive)
-  ;; (unless (use-region-p)
-  ;;   (user-error "No active selection"))
   (when (use-region-p)
+    (setq this-command 'hel-copy)
     (let ((deactivate-mark nil)
-          any?)
+          (kill-fun (pcase current-prefix-arg
+                      ('(4) #'hel--copy-append)
+                      (_    #'kill-new))))
       (hel-with-each-cursor
         (when (use-region-p)
-          (copy-region-as-kill (region-beginning) (region-end))
-          (setq any? t))
+          (funcall kill-fun (filter-buffer-substring (region-beginning)
+                                                     (region-end))))
         (hel-extend-selection -1))
-      (when any? (message "Copied into kill-ring")))
+      (message "Copied into kill-ring"))
     (hel-maybe-set-killed-rectangle)
-    (hel-pulse-main-region)))
+    (when (called-interactively-p 'interactive)
+      (hel-pulse-main-region))))
 
 (defun hel-maybe-set-killed-rectangle ()
   "Add the latest `kill-ring' entry of each cursor to `killed-rectangle',

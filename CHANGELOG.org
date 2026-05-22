@@ -13,14 +13,17 @@
 
 ** Changed
 
+- =y= — With =M-u= (~universal-argument~) the selection is appended to the last
+  item in the ~kill-ring~.
+
+- In =special-mode= in Normal state =Esc= now switches to Motion state.
+
 - *[BREAKING]*
   All extensions are moved to their own repositories.
 
 - *[BREAKING]*
   =hel-leader= extension is fully rewritten: the [[https://github.com/emacsorphanage/god-mode][God-Mode]] logic is replaced
   with an original one.
-
-- In =special-mode= in Normal state =Esc= now switches to Motion state.
 
 * [0.10.0]
 ** Added

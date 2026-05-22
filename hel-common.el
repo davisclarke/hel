@@ -947,6 +947,21 @@ YANK-FUNCTION should be a `yank' like function."
         (string-trim-right str "[\r\n]+"))
     str))
 
+(defun hel--copy-append (string)
+  "Append STRING to the end of the latest kill in the kill ring."
+  (let* ((left (or (car kill-ring) ""))
+         (right string)
+         (separator (if (or (string-suffix-p "\n" left)
+                            (string-prefix-p "\n" right))
+                        "\n"
+                      " "))
+         (replace? (or (= (length left) 0)
+                       (null (get-text-property 0 'yank-handler left)))))
+    (kill-new (concat (string-trim-right left)
+                      separator
+                      (string-trim-right right))
+              replace?)))
+
 ;;; Changes
 
 (defun hel-indent (indent-function count)

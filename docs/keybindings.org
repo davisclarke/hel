@@ -180,7 +180,10 @@ All keys available in Motion state are also work in Normal state.
 
 - =u= / =U= :: *undo* / *redo*.
 
-- =y= :: Copy selection into ~kill-ring~.
+- =y= ::
+  - Copy the selection into ~kill-ring~.
+  - With =M-u= (~universal-argument~) append selection to the last item in the
+    ~kill-ring~.
 
 - =p= / =P= :: Paste last entry from ~kill-ring~ *after* / *before* selection.
 
