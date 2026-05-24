@@ -110,9 +110,9 @@
     (remove-hook 'input-method-activate-hook #'hel-activate-input-method t)
     (remove-hook 'input-method-deactivate-hook #'hel-deactivate-input-method t)
     (hel--single-undo-step-end)
+    (hel-disable-multiple-cursors-mode)
     (setq hel-this-command nil
           hel--input-cache nil)
-    (when hel-multiple-cursors-mode (hel-multiple-cursors-mode -1))
     (cl-callf map-delete minor-mode-overriding-map-alist 'hel-multiple-cursors-mode)
     (hel-disable-current-state)
     (activate-input-method hel-input-method)))
