@@ -163,9 +163,9 @@ All keys available in Motion state are also work in Normal state.
 
 ** Changes
 
-- =i= / =a= :: insert / append: Switch to Insert state *before* / *after* selection.
+- =i= / =a= :: *insert* / *append*: Switch to Insert state *before* / *after* selection.
 
-- =I= / =A= :: Insert / Append: Switch to Insert state at the *start* / *end* of the line.
+- =I= / =A= :: *Insert* / *Append*: Switch to Insert state at the *start* / *end* of the line.
 
 - =o= / =O= ::
   Open: add new line *bellow* / *above* the current line and switch to Insert state.
@@ -221,7 +221,7 @@ All keys available in Motion state are also work in Normal state.
 
 *** Keys active while there are multiple cursors
 
-- =K= / =M-K= :: Keep/remove selections matching to regexp.
+- =K= / =M-K= :: *Keep* / *remove* selections matching to regexp.
 
 - =,= :: Remove all secondary cursors.
 

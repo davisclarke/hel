@@ -657,14 +657,12 @@ Return t if COMMMAND should be executed for all cursors."
     (insert "(setq " (symbol-name list-symbol) "\n"
             "      '(")
     (newline-and-indent)
-    (set list-symbol (-> value
-                         (sort (lambda (x y)
-                                 (string-lessp (symbol-name x)
-                                               (symbol-name y))))))
-    (mapc (lambda (cmd)
-            (insert (format "%S" cmd))
-            (newline-and-indent))
-          value)
+    (set list-symbol (-> value (sort (lambda (x y)
+                                       (string< (symbol-name x)
+                                                (symbol-name y))))))
+    (-each value (lambda (cmd)
+                   (insert (format "%S" cmd))
+                   (newline-and-indent)))
     (insert "))")
     (newline)))
 
@@ -787,17 +785,17 @@ cursor."
   "Return the alist with cons cells (ID . (START END)).
 \(START END) are bounds of regions. Alist is sorted by START.
 ID 0 coresponds to the real cursor."
-  (let* ((alist (cons
-                 ;; Append real cursor with ID 0
-                 `(0 ,(region-beginning) ,(region-end))
-                 (mapcar (lambda (cursor)
-                           (let* ((id  (overlay-get cursor 'id))
-                                  (pnt (overlay-get cursor 'point))
-                                  (mrk (overlay-get cursor 'mark))
-                                  (start (min pnt mrk))
-                                  (end   (max pnt mrk)))
-                             `(,id ,start ,end)))
-                         (hel-all-fake-cursors)))))
+  (let ((alist (cons
+                ;; Append real cursor with ID 0
+                `(0 ,(region-beginning) ,(region-end))
+                (mapcar (lambda (cursor)
+                          (let* ((id  (overlay-get cursor 'id))
+                                 (pnt (overlay-get cursor 'point))
+                                 (mrk (overlay-get cursor 'mark))
+                                 (start (min pnt mrk))
+                                 (end   (max pnt mrk)))
+                            `(,id ,start ,end)))
+                        (hel-all-fake-cursors)))))
     (sort alist (lambda (a b)
                   (< (-second-item a) (-second-item b))))))
 

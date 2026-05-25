@@ -56,9 +56,9 @@ parameters:
   - nil  Command will be executed only for main cursor.
 
 `:merge-selections'
-  Any Emacs lisp FORM, that will be evaluated after COMMAND execution
-  and if it evaluates to non-nil overlapping selections (regions) will
-  be merged into single selection.
+  Any Emacs Lisp FORM, that will be evaluated after COMMAND execution
+  and if it evaluates to non-nil — overlapping selections (regions)
+  will be merged into single selection.
 
 \(fn COMMAND (ARGS...) [DOC] [[KEY VALUE]...] BODY...)"
   (declare (indent defun)
@@ -88,7 +88,7 @@ parameters:
     ;; macro expansion
     `(progn
        (defun ,command (,@args)
-         ,@(when doc `(,doc))
+         ,@(if doc `(,doc))
          ,@body)
        ,@properties)))
 

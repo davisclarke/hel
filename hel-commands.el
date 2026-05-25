@@ -165,7 +165,7 @@ Push mark at previous position, unless extending selection."
       (goto-line (prefix-numeric-value count))
     (goto-char (point-max))))
 
-;; gs
+;; gh
 (hel-define-command hel-beginning-of-line-command ()
   "Move point to beginning of current line.
 Use visual line when `visual-line-mode' is active."
@@ -176,7 +176,7 @@ Use visual line when `visual-line-mode' is active."
   (hel-set-region (if hel--extend-selection (mark) (point))
                   (hel-beginning-of-line)))
 
-;; gh
+;; gs
 (hel-define-command hel-first-non-blank ()
   "Move point to beginning of current line skipping indentation.
 Use visual line when `visual-line-mode' is active."

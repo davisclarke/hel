@@ -1155,7 +1155,7 @@ that `match-beginning', `match-end' and `match-data' access."
 
 (defun hel-string-ends-with-newline (string)
   "Return t if STRING ends with newline character."
-  (eql (aref string (1- (length string)))
+  (eql (elt string (1- (length string)))
        ?\n))
 
 (cl-defun hel-all-elements-are-the-same-p (list &key (test #'equal))
@@ -1237,14 +1237,15 @@ the returned list to the original symbol like this:
         elem head)
     (while (and tail (not (eq tail pointer)))
       (setq elem (car tail))
-      (cond ((funcall predicate elem)
-             (setq tail (cdr tail))
-             (if head
-                 (setcdr head tail)
-               (setq list tail)))
-            (t
-             (setq head tail
-                   tail (cdr tail)))))
+      (if (funcall predicate elem)
+          (progn
+            (setq tail (cdr tail))
+            (if head
+                (setcdr head tail)
+              (setq list tail)))
+        ;; else advance
+        (setq head tail
+              tail (cdr tail))))
     list))
 
 (defun hel-echo (str &optional face)
