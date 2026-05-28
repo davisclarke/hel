@@ -132,11 +132,12 @@ This package is not one-to-one emulation. Some commands are implemented in sligh
 
 ## Extensions
 
-- [hel-leader](https://github.com/anuvyklack/hel-leader) — Use `Space` as a leader key.
-- [hel-org](https://github.com/anuvyklack/hel-org) — [Org-mode](https://orgmode.org/) integration.
-- [hel-paredit](https://github.com/anuvyklack/hel-paredit) — structural editing for S-expressions.
-- [hel-vterm](https://github.com/anuvyklack/hel-vterm) — [vterm](https://github.com/akermu/emacs-libvterm) terminal emulator integration.
-- [hel-agent-shell](https://github.com/anuvyklack/hel-agent-shell) — [agent-shell](https://github.com/xenodium/agent-shell) integration.
+- [hel-leader](https://github.com/anuvyklack/hel-leader) — use `Space` as a leader key
+- [hel-org](https://github.com/anuvyklack/hel-org) — for [Org-mode](https://orgmode.org/)
+- [hel-paredit](https://github.com/anuvyklack/hel-paredit) — structural editing for S-expressions
+- [hel-ghostel](https://github.com/anuvyklack/hel-ghostel) — for [ghostel](https://github.com/dakra/ghostel) terminal
+- [hel-vterm](https://github.com/anuvyklack/hel-vterm) — for [vterm](https://github.com/akermu/emacs-libvterm) terminal emulator
+- [hel-agent-shell](https://github.com/anuvyklack/hel-agent-shell) — for [agent-shell](https://github.com/xenodium/agent-shell)
 
 ## Tips
 
