@@ -940,30 +940,29 @@ entered regexp withing current selections."
   :multiple-cursors nil
   (interactive)
   (when (region-active-p)
-    (when hel-multiple-cursors-mode
-      (setq hel--cursors-positions-history (hel-cursors-positions)))
-    (hel-with-real-cursor-as-fake
-      (let* ((cursors (hel-all-fake-cursors))
-             (ranges (->> cursors
-                          (-map (lambda (cursor)
-                                  (if (overlay-get cursor 'mark-active)
-                                      (let ((point (-> cursor
-                                                       (overlay-get 'point)
-                                                       (marker-position)))
-                                            (mark  (-> cursor
-                                                       (overlay-get 'mark)
-                                                       (marker-position))))
-                                        (if (< point mark)
-                                            (cons point mark)
-                                          (cons mark point))))))
-                          (delq nil))))
-        (-each cursors #'hel--delete-fake-cursor)
-        (setq hel--extend-selection nil)
-        (if (setq ranges (hel-search-interactively-in-noncontiguous-regions ranges invert))
-            (-each ranges (-lambda ((mark . point))
-                            (hel-create-fake-cursor point mark)))
-          ;; Else restore original cursors.
-          (hel-place-cursors hel--cursors-positions-history))))
+    (let ((cursors-positions (hel-cursors-positions)))
+      (hel-with-real-cursor-as-fake
+        (let* ((cursors (hel-all-fake-cursors))
+               (ranges (->> cursors
+                            (-map (lambda (cursor)
+                                    (if (overlay-get cursor 'mark-active)
+                                        (let ((point (-> cursor
+                                                         (overlay-get 'point)
+                                                         (marker-position)))
+                                              (mark  (-> cursor
+                                                         (overlay-get 'mark)
+                                                         (marker-position))))
+                                          (if (< point mark)
+                                              (cons point mark)
+                                            (cons mark point))))))
+                            (delq nil))))
+          (-each cursors #'hel--delete-fake-cursor)
+          (setq hel--extend-selection nil)
+          (if (setq ranges (hel-search-interactively-in-noncontiguous-regions ranges invert))
+              (-each ranges (-lambda ((mark . point))
+                              (hel-create-fake-cursor point mark)))
+            ;; Else restore original cursors.
+            (hel-place-cursors cursors-positions)))))
     (hel-auto-multiple-cursors-mode)))
 
 ;; S
