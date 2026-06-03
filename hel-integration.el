@@ -27,11 +27,11 @@
 
 ;; M-x
 (hel-advice-add 'execute-extended-command :after #'hel--execute-for-all-cursors-a)
-(put 'execute-extended-command 'multiple-cursors nil)
+(hel-set-single-cursor-command 'execute-extended-command)
 
 ;; M-X
 (hel-advice-add 'execute-extended-command-for-buffer :after #'hel--execute-for-all-cursors-a)
-(put 'execute-extended-command-for-buffer 'multiple-cursors nil)
+(hel-set-single-cursor-command 'execute-extended-command-for-buffer)
 
 (hel-define-advice current-kill (:before (n &optional _do-not-move) hel)
   "Make sure pastes from other programs are added to `kill-ring's
@@ -291,7 +291,7 @@ in the command loop, and the fake cursors can pick up on those instead."
 
 (with-eval-after-load 'helpful
   (hel-set-initial-state 'helpful-mode 'normal)
-  (put 'helpful-at-point 'multiple-cursors nil))
+  (hel-set-single-cursor-command 'helpful-at-point))
 
 ;;;; Calendar
 
@@ -525,12 +525,12 @@ If cursor is in read-only area, jump to prompt instead of deleting."
     "<remap> <save-buffer>" 'wdired-finish-edit
     "C-g" 'wdired-abort-changes)
 
-  (put 'wdired--self-insert  'multiple-cursors t)
-  (put 'wdired-next-line     'multiple-cursors t)
-  (put 'wdired-previous-line 'multiple-cursors t)
-  (put 'wdired-finish-edit   'multiple-cursors nil)
-  (put 'wdired-abort-changes 'multiple-cursors nil)
-  (put 'wdired-exit          'multiple-cursors nil)
+  (hel-set-multiple-cursors-command 'wdired--self-insert)
+  (hel-set-multiple-cursors-command 'wdired-next-line)
+  (hel-set-multiple-cursors-command 'wdired-previous-line)
+  (hel-set-single-cursor-command 'wdired-finish-edit)
+  (hel-set-single-cursor-command 'wdired-abort-changes)
+  (hel-set-single-cursor-command 'wdired-exit)
 
   (hel-advice-add 'wdired-change-to-dired-mode :before #'hel-deactivate-mark-a)
   (hel-advice-add 'wdired-change-to-dired-mode :before #'hel-disable-multiple-cursors-mode)
@@ -808,7 +808,7 @@ field widgets (like `Custom-mode' or `notmuch-hello-mode')."
 (with-eval-after-load 'consult
   (hel-cache-input consult--read)
 
-  (put 'consult-yank-pop 'multiple-cursors t) ; Execute for all cursors.
+  (hel-set-multiple-cursors-command 'consult-yank-pop)
 
   (dolist (cmd '(consult-line
                  consult-mark
