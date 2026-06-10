@@ -291,7 +291,12 @@ in the command loop, and the fake cursors can pick up on those instead."
 
 (with-eval-after-load 'helpful
   (hel-set-initial-state 'helpful-mode 'normal)
-  (hel-set-single-cursor-command 'helpful-at-point))
+  (hel-set-single-cursor-command 'helpful-at-point)
+  ;; `helpful-mode' is derived from `special-mode', in which ESC is bound
+  ;; to switching Hel to Motion state. We don't need Motion state in
+  ;; `helpful-mode', so override it.
+  (hel-keymap-set helpful-mode-map :state 'normal
+    "<escape>" #'hel-normal-state-escape))
 
 ;;;; Calendar
 
