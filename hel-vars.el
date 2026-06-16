@@ -485,8 +485,8 @@ Default value is 0 - scroll half the screen.")
 (defvar hel-commands-to-run-once nil
   "Commands to execute only once while multiple cursors are active.")
 
-(defvar hel-fake-cursor-specific-vars
-  '(transient-mark-mode ;; for (region-active-p)
+(defvar hel-fake-cursor-variables
+  '(transient-mark-mode ; for `region-active-p'
     mark-active
     mark-ring
     kill-ring
@@ -506,7 +506,7 @@ Default value is 0 - scroll half the screen.")
     dabbrev--last-expansion
     dabbrev--last-expansion-location
     dabbrev--last-table)
-  "A list of vars that need to be tracked on a per-cursor basis.")
+  "A list of variables that are tracked on a per-cursor basis.")
 
 (defvar hel--whitelist-file-loaded nil
   "Non-nil when `hel-whitelist-file' file has already been loaded.")

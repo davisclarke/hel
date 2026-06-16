@@ -19,10 +19,10 @@
 ;; real cursor by Emacs command loop. Then in `post-command-hook' it executed
 ;; for all fake cursors. Fake cursor is an overlay that emulates cursor and
 ;; stores inside point, mark, kill-ring and some other variables (full list
-;; is in `hel-fake-cursor-specific-vars'). Executing command for fake cursor
-;; looks as follows: set point and mark to positions saved in fake cursor
-;; overlay, restore all variables from it, execute command in this environment,
-;; store point, mark and new state into fake cursor overlay.
+;; is in `hel-fake-cursor-variables'). Executing command for fake cursor looks
+;; as follows: set point and mark to positions saved in fake cursor overlay,
+;; restore all variables from it, execute command in this environment, store
+;; point, mark and new state into fake cursor overlay.
 ;;
 ;; How command will be executed is controlled by the `multiple-cursors' symbol
 ;; property with three cases:
@@ -294,14 +294,14 @@ Return CURSOR."
   (if-let* ((mrk (overlay-get overlay 'mark)))
       (set-marker mrk mark)
     (overlay-put overlay 'mark (copy-marker mark)))
-  (dolist (var hel-fake-cursor-specific-vars)
+  (dolist (var hel-fake-cursor-variables)
     (if (boundp var)
         (overlay-put overlay var (symbol-value var))))
   overlay)
 
 (defun hel-update-fake-cursor-state (cursor)
   "Update variables stored in fake CURSOR."
-  (dolist (var hel-fake-cursor-specific-vars)
+  (dolist (var hel-fake-cursor-variables)
     (if (boundp var)
         (overlay-put cursor var (symbol-value var)))))
 
@@ -314,7 +314,7 @@ Return CURSOR."
   "Restore point, mark and cursor variables saved in OVERLAY."
   (goto-char (overlay-get overlay 'point))
   (set-marker (mark-marker) (overlay-get overlay 'mark))
-  (dolist (var hel-fake-cursor-specific-vars)
+  (dolist (var hel-fake-cursor-variables)
     (if (boundp var)
         (set var (overlay-get overlay var))))
   (hel--delete-fake-region-overlay overlay)
@@ -467,7 +467,7 @@ the data needed for multiple cursors functionality."
 (defun hel--conserve-main-cursor-state ()
   (let ((state (list :point (copy-marker (point) t)
                      :mark (copy-marker (mark-marker)))))
-    (dolist (var hel-fake-cursor-specific-vars)
+    (dolist (var hel-fake-cursor-variables)
       (if (boundp var)
           (cl-callf plist-put state var (symbol-value var))))
     state))
@@ -480,7 +480,7 @@ the data needed for multiple cursors functionality."
               (let ((mrk (plist-get state :mark)))
                 (prog1 (marker-position mrk)
                   (set-marker mrk nil))))
-  (dolist (var hel-fake-cursor-specific-vars)
+  (dolist (var hel-fake-cursor-variables)
     (if (boundp var)
         (set var (plist-get state var)))))
 
