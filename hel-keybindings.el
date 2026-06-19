@@ -135,8 +135,8 @@ use it."
   "%"   #'hel-mark-whole-buffer
   "C"   #'hel-copy-selection
   "M-c" #'hel-copy-selection-up
-  "s"   #'hel-select-regex
-  "S"   #'hel-split-region
+  "s"   #'hel-select-in-selections
+  "S"   #'hel-split-selections
   "M-s" #'hel-split-region-on-newline
   ";"   #'hel-collapse-selection
   "C-;" #'hel-exchange-point-and-mark

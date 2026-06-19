@@ -948,50 +948,6 @@ When called interactively — toggle extending selection."
   ;; in the minibuffer, this is at the end of the prompt.
   (hel-set-region (minibuffer-prompt-end) (point-max) -1))
 
-;; s
-(hel-define-command hel-select-regex (&optional invert)
-  "Create new selections for all matches to the regexp entered withing current
-selections.
-
-If INVERT is non-nil — create new selections for all regions that NOT match to
-entered regexp withing current selections."
-  :multiple-cursors nil
-  (interactive)
-  (when (region-active-p)
-    (let ((cursors-positions (hel-cursors-positions)))
-      (hel-with-real-cursor-as-fake
-        (let* ((cursors (hel-all-fake-cursors))
-               (ranges (->> cursors
-                            (-map (lambda (cursor)
-                                    (if (overlay-get cursor 'mark-active)
-                                        (let ((point (-> cursor
-                                                         (overlay-get 'point)
-                                                         (marker-position)))
-                                              (mark  (-> cursor
-                                                         (overlay-get 'mark)
-                                                         (marker-position))))
-                                          (if (< point mark)
-                                              (cons point mark)
-                                            (cons mark point))))))
-                            (delq nil))))
-          (-each cursors #'hel--delete-fake-cursor)
-          (setq hel--extend-selection nil)
-          (if (setq ranges (hel-search-interactively-in-noncontiguous-regions ranges invert))
-              (-each ranges (-lambda ((mark . point))
-                              (hel-create-fake-cursor point mark)))
-            ;; Else restore original cursors.
-            (hel-place-cursors cursors-positions)))))
-    (hel-search--commit-folds (->> (hel-cursors-positions)
-                                   (-map #'car)))
-    (hel-auto-multiple-cursors-mode)))
-
-;; S
-(hel-define-command hel-split-region ()
-  "Split each selection according to the regexp entered."
-  :multiple-cursors nil
-  (interactive)
-  (hel-select-regex t))
-
 ;; M-s
 (hel-define-command hel-split-region-on-newline ()
   "Split selections on line boundaries."

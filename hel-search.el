@@ -187,73 +187,6 @@ window edge toward DIRECTION (whole window when nil). Ignored if BOUNDS is set."
                                (hel-highlight-overlays hl)))
       ranges)))
 
-;;;; Select: s and S
-
-;; TODO: count and folds for matches inside folds (currently skipped).
-(defun hel-search-interactively-in-noncontiguous-regions (bounds &optional invert)
-  "Return ranges matching an interactively entered regexp within BOUNDS.
-BOUNDS is a list of cons cells (START . END) that defines the limits within
-which search is performed. With INVERT non-nil, return the complement ranges.
-Shows a live preview, a match count, and scrolls the first match into view."
-  (let ((mark-active nil) ; temporarily deactivate selection in this function body
-        (face 'region)
-        regexp overlays timer count-ov
-        (start  (make-symbol "hel-select-interactively--start-session"))
-        (stop   (make-symbol "hel-select-interactively--stop-session"))
-        (after  (make-symbol "hel-select-interactively--after-change"))
-        (update (make-symbol "hel-select-interactively--update")))
-    (fset start
-          (lambda ()
-            (add-hook 'after-change-functions after nil t)
-            (add-hook 'minibuffer-exit-hook stop nil t)
-            (setq count-ov (hel-search--make-count-overlay))
-            (with-minibuffer-selected-window
-              (setq overlays (hel--put-overlays bounds face)))))
-    (fset after
-          (lambda (&rest _)
-            (-some-> timer (cancel-timer))
-            (setq regexp (let ((s (minibuffer-contents-no-properties)))
-                           (unless (string-empty-p s)
-                             (hel-pcre-to-elisp s))))
-            (setq timer (run-at-time hel-update-highlight-delay nil update))))
-    (fset update
-          (lambda ()
-            (with-minibuffer-selected-window
-              (let ((ranges (if regexp
-                                (-mapcat (-lambda ((beg . end))
-                                           (hel-regexp-match-ranges
-                                            regexp beg end invert))
-                                         bounds))))
-                (setq overlays (hel--put-overlays (or ranges bounds) face overlays))
-                ;; Scroll the first match into view.
-                (when ranges
-                  (let ((pos (->> ranges (-map #'car) (apply #'min))))
-                    (unless (pos-visible-in-window-p pos)
-                      (save-excursion (goto-char pos) (recenter)))))
-                ;; Show the match count.
-                (when (overlayp count-ov)
-                  (overlay-put count-ov 'after-string
-                               (if ranges
-                                   (format " [%d]" (length ranges)))))))))
-    (fset stop
-          (lambda ()
-            (-some-> timer (cancel-timer))
-            (-some-> count-ov (delete-overlay))
-            (-each overlays #'delete-overlay)))
-    ;; main
-    (when-let* ((pattern (condition-case nil
-                             (minibuffer-with-setup-hook start
-                               (hel-read-regexp (if invert "split: " "select: ")))
-                           (quit))) ;; "C-g"
-                ((stringp pattern))
-                ((not (string-empty-p pattern)))
-                (regexp (hel-pcre-to-elisp pattern))
-                (ranges (-mapcat (-lambda ((beg . end))
-                                   (hel-regexp-match-ranges regexp beg end invert))
-                                 bounds)))
-      (hel-add-to-regex-history pattern)
-      ranges)))
-
 ;;;; Filter: K and M-K
 
 (defvar hel-filter--regions-overlays nil "List of fake regions overlays.")
@@ -467,22 +400,6 @@ A value of nil means highlight all matches in the buffer."
 
 ;;;; Utils
 
-(cl-defun +hel-search (regexp &optional bound (direction 1))
-  "Find the first match for the REGEXP toward the DIRECTION.
-Return list (MATCH-DATA OVERLAYS) where:
-- MATCH-DATA is the same as `match-data' returns;
-- OVERLAYS is a list with openable overlays that currently hide the match.
-
-This function modifies the match data that `match-beginning',
-`match-end' and `match-data' access."
-  (let (found)
-    (while (and (not found)
-                (re-search-forward regexp bound t direction))
-      (when-let* ((visible (hel-range-visible? (match-beginning 0) (match-end 0))))
-        (setq found (list (match-data) (if (consp visible)
-                                           visible)))))
-    found))
-
 (cl-defun hel-match (&optional (match-data (match-data)))
   "Return cons cell with bounds of the first match group in `match-data'.
 If there were no match groups in the last used regexp — return the bounds
@@ -497,16 +414,45 @@ of the full regexp match."
   ;;   (cons (match-beginning 0) (match-end 0)))
   )
 
+(cl-defun +hel-search (regexp &optional bound (direction 1))
+  "Find the first match for the REGEXP toward the DIRECTION.
+Return list (MATCH-DATA OVERLAYS) where:
+- MATCH-DATA is the same as `match-data' returns;
+- OVERLAYS is a list with openable overlays that currently hide the match.
+
+This function modifies the match data that `match-beginning',
+`match-end' and `match-data' access."
+  (let (found)
+    (while (and (not found)
+                (re-search-forward regexp bound t direction))
+      (when-let* ((val (hel-range-visible? (match-beginning 0) (match-end 0))))
+        (setq found (list (match-data) (if (consp val)
+                                           val)))))
+    found))
+
+;; TODO: docstring
+(defun hel-search-all-matches (regexp start end)
+  (save-excursion
+    (goto-char start)
+    ;; (ignore-errors)
+    (catch 'break
+      (let (result match)
+        (while (setq match (+hel-search regexp end))
+          (-let [(beg . end) (hel-match (car match))]
+            (if (= beg end)
+                ;; Break on zero-length match like "^" or "$", to avoid
+                ;; an infinite loop.
+                (throw 'break nil)
+              (push match result))))
+        (nreverse result)))))
+
 (defun hel-put-highlight (start end face &optional priority overlay)
   (-doto (if overlay
              (move-overlay overlay start end)
            ;; Bug#77121: highlight overlays must be non-sticky at both ends.
            (make-overlay start end nil t nil))
     (overlay-put 'face face)
-    (overlay-put 'priority priority)
-    (overlay-put 'modification-hooks (list
-                                      (lambda (ov flag _beg _end &optional _len)
-                                        (when flag (delete-overlay ov)))))))
+    (overlay-put 'priority priority)))
 
 (defun hel-search-highlight-all-matches (match-data &optional overlays)
   "Highlight all submatches in MATCH-DATA.
@@ -622,7 +568,7 @@ Run search session if REGEXP is provided."
                     ;; Ensure forward progress on zero-length matches like
                     ;; "^" or "$" to avoid an infinite loop.
                     (unless (eobp) (forward-char 1))
-                  (push (hel-put-highlight beg end 'lazy-highlight '(nil . 50))
+                  (push (hel-search-session--highlight-overlay beg end)
                         window-overlays))))))
         (cl-callf nreverse window-overlays)
         (setf (hel-search-session-timer self)
@@ -666,7 +612,7 @@ Run search session if REGEXP is provided."
                                      (overlay-end))))
                   ;; else
                   (cl-incf (hel-search-session-counter self))
-                  (push (hel-put-highlight beg end 'lazy-highlight '(nil . 50))
+                  (push (hel-search-session--highlight-overlay beg end)
                         (hel-search-session-overlays self))))))
           (setf (hel-search-session-scan-pos self) (point)))
         (if (>= n hel-lazy-highlight-buffer-max-at-a-time)
@@ -683,6 +629,18 @@ Run search session if REGEXP is provided."
                 (vconcat (nreverse (hel-search-session-overlays self))))
           (-some-> (hel-search-session-callback self) (funcall self)))))))
 
+(defun hel-search-session--highlight-overlay (start end)
+  ;; Bug#77121: highlight overlays must be non-sticky at both ends.
+  (-doto (make-overlay start end nil t nil)
+    (overlay-put 'face 'lazy-highlight)
+    (overlay-put 'priority '(nil . 50))
+    (overlay-put 'modification-hooks '(hel--delete-overlay-on-modification-h))))
+
+(defun hel--delete-overlay-on-modification-h (ov flag _beg _end &optional _len)
+  (when flag
+    (delete-overlay ov)))
+
+;; TODO: docstring
 (defun hel-search-session-next-match (self direction)
   "Find the next match from point in DIRECTION.
 Return (START END OVERLAYS INDEX) list where:
@@ -842,6 +800,7 @@ Return (START END OVERLAYS INDEX) list where:
                                (hel-read-regexp prompt))
                            (t
                             (hel-search-session-cleanup ss))))
+                  ((stringp input))
                   ((not (string-empty-p input))))
         (hel-add-to-regex-history input)
         (let ((regexp (hel-pcre-to-elisp input)))
@@ -857,7 +816,7 @@ Return (START END OVERLAYS INDEX) list where:
                                  (and (< (overlay-start ov) (point))
 			              (<= (point) (overlay-end ov))))))]
           (-each open #'hel-open-overlay)
-          (-each close #'hel-close-temrporary-opened-overlay))
+          (-each close #'hel-close-temporary-opened-overlay))
         ss))))
 
 ;; /
@@ -990,6 +949,164 @@ Do not auto-detect word boundaries in the search pattern."
         (-some-> hel-search--session (hel-search-session-cleanup))
         (setq hel-search--session (hel-search-session-create
                                    (hel-pcre-to-elisp regexp)))))))
+
+;;;; Select: s, S
+
+;; s
+(hel-define-command hel-select-in-selections (&optional invert)
+  "Create new selection withing current for all matches to the regexp."
+  :multiple-cursors nil
+  (interactive)
+  (when (region-active-p)
+    (let ((cursors-positions (hel-cursors-positions)))
+      (hel-with-real-cursor-as-fake
+        (let* ((cursors (hel-all-fake-cursors))
+               (regions (->> cursors
+                             (-map (lambda (cursor)
+                                     (if (overlay-get cursor 'mark-active)
+                                         (let ((point (-> cursor
+                                                          (overlay-get 'point)
+                                                          (marker-position)))
+                                               (mark  (-> cursor
+                                                          (overlay-get 'mark)
+                                                          (marker-position))))
+                                           (if (< point mark)
+                                               (cons point mark)
+                                             (cons mark point))))))
+                             (delq nil)))
+               ;; Closed overlays that overlap regions.
+               (overlays (->> regions
+                              (-mapcat (-lambda ((beg . end))
+                                         (overlays-in beg end)))
+                              (-uniq)
+                              (-filter (lambda (ov)
+                                         (invisible-p (overlay-get ov 'invisible)))))))
+          (-each overlays #'hel-temporary-open-overlay)
+          (-each cursors  #'hel--delete-fake-cursor)
+          (setq hel--extend-selection nil)
+          (if (setq regions (hel-select-interactively-in-regions regions invert))
+              (progn
+                (-each regions (-lambda ((mark . point))
+                                 (hel-create-fake-cursor point mark)))
+                (when overlays
+                  ;; Sort overlays by starting position.
+                  (setq overlays (sort overlays (lambda (ov1 ov2)
+                                                  (< (overlay-start ov1)
+                                                     (overlay-start ov2)))))
+                  (-let [(overlap not-overlap) (hel-select--partition-overlays-by-regions
+                                                overlays regions)]
+                    (-each overlap #'hel-open-overlay)
+                    (-each not-overlap #'hel-close-temporary-opened-overlay))))
+            ;; Else restore original cursors.
+            (hel-place-cursors cursors-positions)
+            (-each overlays #'hel-close-temporary-opened-overlay)))))
+    (hel-auto-multiple-cursors-mode)))
+
+;; S
+(hel-define-command hel-split-selections ()
+  "Create new selections withing current for all regions that NOT match to
+the regexp."
+  :multiple-cursors nil
+  (interactive)
+  (hel-select-in-selections t))
+
+(defun hel-select-interactively-in-regions (regions &optional invert)
+  "Return ranges matching an interactively entered regexp within REGIONS.
+REGIONS is a list of cons cells (START . END) that defines the limits within
+which search is performed. With INVERT non-nil, return the complement ranges.
+Shows a live preview, a match count, and scrolls the first match into view."
+  (let ((mark-active nil) ; temporarily deactivate selection in this function body
+        (start-pos (->> regions (-map #'car) (apply #'min)))
+        (win-start (window-start))
+        (win-hscroll (window-hscroll))
+        overlays)
+    (cl-flet*
+        ((highlight (bounds)
+           (hel-put-highlight (car bounds) (cdr bounds) 'region 100))
+         (update (regexp)
+           (with-minibuffer-selected-window
+             (goto-char start-pos)
+             (set-window-start nil win-start :noforce)
+             (set-window-hscroll nil win-hscroll)
+             (if-let* ((regexp)
+                       (ranges (->> regions
+                                    (-mapcat (-lambda ((beg . end))
+                                               (hel-select--search regexp beg end invert)))
+                                    (delq nil))))
+                 (hel-recenter-point-on-jump
+                   ;; (unless (pos-visible-in-window-p min-pos))
+                   (goto-char (->> ranges (-map #'car) (apply #'min)))
+                   (setq overlays (-map #'highlight ranges)))
+               ;; else no matches
+               (setq overlays (-map #'highlight regions))
+               (let ((message-log-max nil))
+                 (message (propertize "No matches" 'face 'error))))))
+         (after (_beg _end _len)
+           (unless (input-pending-p)
+             (-each overlays #'delete-overlay)
+             (update (let ((s (minibuffer-contents-no-properties)))
+                       (unless (string-empty-p s)
+                         (hel-pcre-to-elisp s))))))
+         (stop ()
+           (-each overlays #'delete-overlay))
+         (start ()
+           (add-hook 'after-change-functions #'after nil t)
+           (add-hook 'minibuffer-exit-hook #'stop nil t)))
+      ;; main body
+      (when-let* ((input (condition-case nil
+                             (minibuffer-with-setup-hook #'start
+                               (setq overlays (-map #'highlight regions))
+                               (hel-read-regexp (if invert "split: " "select: ")))
+                           (quit))) ;; "C-g"
+                  ((stringp input))
+                  ((not (string-empty-p input))))
+        (hel-add-to-regex-history input)
+        (let ((regexp (hel-pcre-to-elisp input)))
+          (->> regions
+               (-mapcat (-lambda ((beg . end))
+                          (hel-select--search regexp beg end invert)))
+               (delq nil)))))))
+
+(defun hel-select--search (regexp start end &optional invert)
+  (save-excursion
+    (goto-char start)
+    (let ((continue t) ranges)
+      (while (and continue (re-search-forward regexp end t))
+        (-let ((bounds (hel-match)))
+          (if (/= (car bounds) (cdr bounds))
+              (push bounds ranges)
+            ;; Break on zero-length match like "^" or "$", to avoid an
+            ;; infinite loop.
+            (setq continue nil
+                  ranges nil))))
+      (cl-callf nreverse ranges)
+      (if invert
+          (hel-invert-ranges ranges start end)
+        ranges))))
+
+(defun hel-select--partition-overlays-by-regions (overlays regions)
+  "Separate OVERLAYS into those that overlap any region in REGIONS and those
+that do not. Return a list of two lists: (OVERLAP NOT-OVERLAP).
+
+Both REGIONS and OVERLAYS should be sorted by starting position."
+  (let ( region rs re
+         overlay ovs ove
+         overlap not-overlap)
+    (while (and regions overlays)
+      (unless region (-setq (region &as rs . re) (car regions)))
+      (unless overlay (setq overlay (car overlays)
+                            ovs (overlay-start overlay)
+                            ove (overlay-end overlay)))
+      (cond ((not (or (<= re ovs) (<= ove rs)))
+             (push (pop overlays) overlap)
+             (setq overlay nil))
+            ((< ove re)
+             (push (pop overlays) not-overlap)
+             (setq overlay nil))
+            (t
+             (pop regions)
+             (setq region nil))))
+    (list overlap (append not-overlap overlays))))
 
 ;;; .
 (provide 'hel-search)
