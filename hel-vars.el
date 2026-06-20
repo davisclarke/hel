@@ -242,28 +242,6 @@ If this value is nil, there is no ceiling."
   "List of minor-modes that will be temporarily disabled while there are more
 then one cursor in the buffer.")
 
-(defvar hel-keep-search-highlight-commands
-  '(hel-extend-selection  ; v
-    hel-rotate-selections-forward  ; )
-    hel-rotate-selections-backward ; (
-    hel-search-next       ; n
-    hel-search-previous   ; N
-    ;; switch windows
-    hel-window-split      ; C-w s
-    hel-window-vsplit     ; C-w v
-    hel-window-delete     ; C-w c
-    windmove-left         ; C-w h
-    windmove-right        ; C-w l
-    windmove-up           ; C-w k
-    windmove-down         ; C-w j
-    hel-move-window-left  ; C-w H
-    hel-move-window-down  ; C-w J
-    hel-move-window-up    ; C-w K
-    hel-move-window-right ; C-w L
-    ;; scrolling
-    pixel-scroll-start-momentum)
-  "List of commands which should preserve search highlighting overlays.")
-
 ;; TODO: add examples with `elisp-demos' package
 (hel-defvar-local hel-surround-alist
   '((?\) :insert ("(" . ")")
@@ -345,6 +323,31 @@ KEY is a character, SPEC is a plist with ideologically 2 group of keys:
               LEFT-START      LEFT-END         RIGHT-START       RIGHT-END
 
 See the default value for examples.")
+
+(defcustom hel-search-initial-delay 0.25
+  "Seconds to wait before beginning to lazily highlight all matches.
+This setting only has effect when the search string is shorter than
+`hel-search-no-delay-length' characters."
+  :type 'number
+  :group 'hel)
+
+(defcustom hel-search-no-delay-length 3
+  "For search strings at least this long, lazy highlight starts immediately.
+For shorter search strings, `hel-search-initial-delay' applies."
+  :type 'integer
+  :group 'hel)
+
+(defcustom hel-lazy-highlight-interval 0 ; 0.0625
+  "Seconds between successive lazily highlighting rounds."
+  :type 'number
+  :group 'hel)
+
+(defcustom hel-search-max-at-a-time 200 ; 20 (bug#48581)
+  "Maximum matches to highlight at a time in buffer scanning phase.
+A value of nil means highlight all matches in the buffer in one run."
+  :type '(choice (const :tag "All" nil)
+                 (integer :tag "Some"))
+  :group 'hel)
 
 (defgroup hel-cjk nil
   "CJK support."
