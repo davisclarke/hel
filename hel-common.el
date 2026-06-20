@@ -1006,6 +1006,92 @@ character -- add it and adjust selection."
             (insert ?\n))
           (move-marker (mark-marker) (point)))))))
 
+;;; Fold opening
+
+(defun hel-range-visible? (start end)
+  "Test whether the text in [START, END) range can be shown to the user.
+
+Return values:
+
+  nil     The range is truly-invisible — i.e. it is fully hidden by
+          an `invisible' text property or by a non-openable overlay.
+
+  list    The range is fully or partially folded — i.e. is hidden by
+          openable overlay — the one with `isearch-open-invisible'
+          property. Return a list of these overlays.
+
+  t       The range is, at least partially, visible with no folds to open.
+          (E.g. Org link with hidden target.)"
+  (when (/= start end)
+    (when (< end start) (cl-rotatef end start))
+    (save-excursion
+      ;; The range is "showable" if any of its positions is visible, or
+      ;; or hidden by openable overlay.
+      (let ((visible? nil)
+            (openable-overlays nil))
+        ;; Walk the whole range, stepping at every text-property or
+        ;; overlay boundary.
+        (goto-char start)
+        (while (< (point) end)
+          (cond ((not (invisible-p (point)))
+                 (setq visible? t))
+                ;; Hidden by an `invisible' text property — can't be opened.
+                ((invisible-p (get-text-property (point) 'invisible)))
+                ;; Else hidden by overlay.
+                (t
+                 (let ((can-be-opened? t)
+                       (overlays nil))
+                   (dolist (ov (overlays-at (point)))
+                     (when (invisible-p (overlay-get ov 'invisible))
+                       (if (overlay-get ov 'isearch-open-invisible)
+                           (push ov overlays)
+                         ;; We found one overlay that cannot be opened, that
+                         ;; means the whole chunk cannot be opened.
+                         (setq can-be-opened? nil))))
+                   (when can-be-opened?
+                     (cl-callf append openable-overlays overlays)))))
+          (goto-char (next-char-property-change (point) end)))
+        (if openable-overlays
+            (delete-dups openable-overlays)
+          visible?)))))
+
+(defun hel-open-overlay (ov)
+  "Some packages (like `outline') for correct working of
+`isearch-open-invisible' function require cursor to be inside overlay."
+  (when (and (hel-overlay-live-p ov)
+             (invisible-p (overlay-get ov 'invisible)))
+    (if-let* ((open-fun (overlay-get ov 'isearch-open-invisible)))
+        (save-excursion
+          ;; Some packages (such as `outline') require point to be inside
+          ;; the overlay for `isearch-open-invisible' to work correctly.
+          (goto-char (-> (+ (overlay-start ov) (overlay-end ov))
+                         (/ 2)))
+          (funcall open-fun ov))
+      (overlay-put ov 'invisible nil))))
+
+;; See `isearch-open-overlay-temporary' and comments inside.
+(defun hel-temporary-open-overlay (ov)
+  ;; Modes can provide custom function to open overlays termporary.
+  (if-let* ((open-fun (overlay-get ov 'isearch-open-invisible-temporary)))
+      (funcall open-fun ov nil)
+    ;; Else set `invisible' property to nil, and store the original value to
+    ;; `isearch-invisible' property.
+    (overlay-put ov 'isearch-invisible (overlay-get ov 'invisible))
+    (overlay-put ov 'invisible nil)))
+
+(defun hel-close-temporary-opened-overlay (ov)
+  ;; If this exists it means that the overlay was opened using this function,
+  ;; not by tweaking the overlay properties.
+  (if-let* ((open-fun (overlay-get ov 'isearch-open-invisible-temporary)))
+      (funcall open-fun ov t)
+    ;; Else restore the original value of `invisible' property.
+    (overlay-put ov 'invisible (overlay-get ov 'isearch-invisible))
+    (overlay-put ov 'isearch-invisible nil)))
+
+(defun hel-reveal-position (pos)
+  "Permanently open fold at POS."
+  (-each (overlays-at pos) #'hel-open-overlay))
+
 ;;; Utils
 
 (defun hel--exchange-point-and-mark ()
