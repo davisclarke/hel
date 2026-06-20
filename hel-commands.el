@@ -974,20 +974,6 @@ When called interactively — toggle extending selection."
               (hel-create-fake-cursor border (mark))
               (set-marker (mark-marker) (point)))))))))
 
-;; K
-(hel-define-command hel-keep-selections ()
-  "Keep selections that match to the regexp entered."
-  :multiple-cursors nil
-  (interactive)
-  (hel-filter-selections))
-
-;; M-K
-(hel-define-command hel-remove-selections ()
-  "Remove selections that match to the regexp entered."
-  :multiple-cursors nil
-  (interactive)
-  (hel-filter-selections t))
-
 ;; _
 (hel-define-command hel-trim-whitespaces-from-selection ()
   "Trim whitespaces and newlines from the both ends of selections."

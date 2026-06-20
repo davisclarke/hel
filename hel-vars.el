@@ -242,13 +242,6 @@ If this value is nil, there is no ceiling."
   "List of minor-modes that will be temporarily disabled while there are more
 then one cursor in the buffer.")
 
-(defcustom hel-update-highlight-delay 0.02
-  "Time in seconds of idle before updating search highlighting.
-Setting this to a period shorter than that of keyboard's repeat
-rate allows highlights to update while scrolling."
-  :type 'number
-  :group 'hel)
-
 (defvar hel-keep-search-highlight-commands
   '(hel-extend-selection  ; v
     hel-rotate-selections-forward  ; )

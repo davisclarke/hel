@@ -187,104 +187,6 @@ window edge toward DIRECTION (whole window when nil). Ignored if BOUNDS is set."
                                (hel-highlight-overlays hl)))
       ranges)))
 
-;;;; Filter: K and M-K
-
-(defvar hel-filter--regions-overlays nil "List of fake regions overlays.")
-(defvar hel-filter--regions-contents nil "List of fake regions content.")
-(defvar hel-filter--invert nil)
-(defvar hel-filter--timer nil "Debounce timer for the filter live preview.")
-(defvar hel-filter--count-ov nil "Minibuffer overlay for the kept count.")
-
-(defun hel-filter-selections (&optional invert)
-  "Keep selections that match regexp entered.
-If INVERT is non-nil — remove selections that match regexp."
-  (unless hel-multiple-cursors-mode
-    (user-error "No multiple selections"))
-  (hel-with-real-cursor-as-fake
-    (let* ((cursors (hel-all-fake-cursors))
-           (regions-overlays (-map (lambda (cursor)
-                                     (overlay-get cursor 'fake-region))
-                                   cursors))
-           (regions-contents (-map (lambda (cursor)
-                                     (buffer-substring-no-properties
-                                      (overlay-get cursor 'point)
-                                      (overlay-get cursor 'mark)))
-                                   cursors)))
-      (setq hel-filter--regions-overlays regions-overlays
-            hel-filter--regions-contents regions-contents
-            hel-filter--invert invert)
-      (deactivate-mark)
-      (-each cursors #'delete-overlay)
-      (if-let* ((pattern (condition-case nil
-                             (minibuffer-with-setup-hook #'hel-filter--start-session
-                               (hel-read-regexp (if invert "remove: " "keep: ")))
-                           (quit)))
-                ((not (string-empty-p pattern)))
-                (regexp (hel-pcre-to-elisp pattern))
-                (flags (-map (lambda (str)
-                               (xor (string-match regexp str)
-                                    hel-filter--invert))
-                             hel-filter--regions-contents))
-                ((-contains? flags t)))
-          (cl-loop for cursor in cursors
-                   for flag in flags
-                   do (if flag
-                          (progn
-                            (hel--set-cursor-overlay cursor (overlay-get cursor 'point))
-                            (overlay-put (overlay-get cursor 'fake-region)
-                                         'face 'region))
-                        (hel--delete-fake-cursor cursor)))
-        ;; Else restore all cursors
-        (dolist (cursor cursors)
-          (hel--set-cursor-overlay cursor (overlay-get cursor 'point))
-          (overlay-put (overlay-get cursor 'fake-region)
-                       'face 'region))))))
-
-(defun hel-filter--start-session ()
-  (add-hook 'after-change-functions #'hel-filter--update-hook nil t)
-  (add-hook 'minibuffer-exit-hook #'hel-filter--stop-session nil t)
-  (setq hel-filter--count-ov (hel-search--make-count-overlay)))
-
-(defun hel-filter--stop-session ()
-  (when hel-filter--timer
-    (cancel-timer hel-filter--timer)
-    (setq hel-filter--timer nil))
-  (when hel-filter--count-ov
-    (delete-overlay hel-filter--count-ov)
-    (setq hel-filter--count-ov nil)))
-
-(defun hel-filter--update-hook (&rest _)
-  (when hel-filter--timer
-    (cancel-timer hel-filter--timer))
-  (setq hel-filter--timer
-        (run-at-time hel-update-highlight-delay nil
-                     #'hel-filter--do-update)))
-
-(defun hel-filter--do-update ()
-  "Highlight current matches during a filter selections session."
-  (let* ((regions-overlays hel-filter--regions-overlays)
-         (pattern (minibuffer-contents-no-properties))
-         (regexp (unless (string-empty-p pattern) (hel-pcre-to-elisp pattern)))
-         (flags (and regexp
-                     (let ((flags (-map (lambda (str)
-                                          (if (string-match regexp str) t))
-                                        hel-filter--regions-contents)))
-                       (if hel-filter--invert (-map #'not flags) flags)))))
-    (if (and flags (-contains? flags t))
-        (progn
-          (cl-loop for overlay in regions-overlays
-                   for flag in flags
-                   do (overlay-put overlay 'face (if flag 'region)))
-          (when (overlayp hel-filter--count-ov)
-            (overlay-put hel-filter--count-ov 'after-string
-                         (format " [%d/%d]" (-count #'identity flags)
-                                 (length flags)))))
-      ;; Else highlight all regions.
-      (dolist (ov regions-overlays)
-        (overlay-put ov 'face 'region))
-      (when (overlayp hel-filter--count-ov)
-        (overlay-put hel-filter--count-ov 'after-string nil)))))
-
 ;;;; Find char: f F t T
 
 (defun hel-find-char (char direction exclusive?)
@@ -1107,6 +1009,88 @@ Both REGIONS and OVERLAYS should be sorted by starting position."
              (pop regions)
              (setq region nil))))
     (list overlap (append not-overlap overlays))))
+
+;;;; Filter: K, M-K
+
+;; K
+(hel-define-command hel-keep-selections ()
+  "Keep selections that match to the regexp entered."
+  :multiple-cursors nil
+  (interactive)
+  (hel-filter-selections))
+
+;; M-K
+(hel-define-command hel-remove-selections ()
+  "Remove selections that match to the regexp entered."
+  :multiple-cursors nil
+  (interactive)
+  (hel-filter-selections t))
+
+(defun hel-filter-selections (&optional invert)
+  "Keep selections that match regexp entered.
+If INVERT is non-nil — remove selections that match regexp."
+  (unless hel-multiple-cursors-mode
+    (user-error "No multiple selections"))
+  (hel-with-real-cursor-as-fake
+    (let* ((cursors (hel-all-fake-cursors))
+           (regions-overlays (-map (lambda (cursor)
+                                     (overlay-get cursor 'fake-region))
+                                   cursors))
+           (regions-content (-map (lambda (cursor)
+                                    (buffer-substring-no-properties
+                                     (overlay-get cursor 'point)
+                                     (overlay-get cursor 'mark)))
+                                  cursors)))
+      (cl-flet*
+          ((update (regexp)
+             (if-let* ((regexp)
+                       (flags (-map (lambda (str)
+                                      (xor (string-match regexp str)
+                                           invert))
+                                    regions-content))
+                       ((-any #'identity flags)))
+                 (-each (-zip-pair regions-overlays flags)
+                   (-lambda ((overlay . flag))
+                     (overlay-put overlay 'face (if flag 'region))))
+               ;; else no matches
+               (let ((message-log-max nil))
+                 (message (propertize "No matches" 'face 'error)))
+               (-each regions-overlays (lambda (ov)
+                                         (overlay-put ov 'face 'region)))))
+           (after (_beg _end _len)
+             (unless (input-pending-p)
+               (update (let ((s (minibuffer-contents-no-properties)))
+                         (unless (string-empty-p s)
+                           (hel-pcre-to-elisp s))))))
+           (start ()
+             (add-hook 'after-change-functions #'after nil t)))
+        ;; main
+        (deactivate-mark)
+        (-each cursors #'delete-overlay)
+        (if-let* ((input (condition-case nil
+                             (minibuffer-with-setup-hook #'start
+                               (hel-read-regexp (if invert "remove: " "keep: ")))
+                           (quit)))
+                  ((stringp input))
+                  ((not (string-empty-p input)))
+                  (regexp (hel-pcre-to-elisp input))
+                  (flags (-map (lambda (str)
+                                 (xor (string-match regexp str)
+                                      invert))
+                               regions-content))
+                  ((-any #'identity flags)))
+            (-each (-zip-pair cursors flags)
+              (-lambda ((cursor . flag))
+                (if (not flag)
+                    (hel--delete-fake-cursor cursor)
+                  (hel--set-cursor-overlay cursor (overlay-get cursor 'point))
+                  (-> (overlay-get cursor 'fake-region)
+                      (overlay-put 'face 'region)))))
+          ;; Else restore all cursors
+          (dolist (cursor cursors)
+            (hel--set-cursor-overlay cursor (overlay-get cursor 'point))
+            (-> (overlay-get cursor 'fake-region)
+                (overlay-put 'face 'region))))))))
 
 ;;; .
 (provide 'hel-search)
