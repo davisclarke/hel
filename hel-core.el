@@ -42,7 +42,7 @@
 
 ;;; Hel mode
 
-(defun hel--pre-commad-hook ()
+(defun hel--pre-command-hook ()
   "Hook run before each command is executed. See `pre-command-hook'."
   (when (and hel--extend-selection (not mark-active))
     (set-mark (point)))
@@ -80,7 +80,7 @@
     (setq hel-this-command nil
           hel--input-cache nil)))
 
-(put 'hel--pre-commad-hook 'permanent-local-hook t)
+(put 'hel--pre-command-hook 'permanent-local-hook t)
 (put 'hel--post-command-hook 'permanent-local-hook t)
 
 (define-minor-mode hel-local-mode
@@ -96,7 +96,7 @@
         ;; all others when `hel-multiple-cursors-mode' is active.
         (setf (alist-get 'hel-multiple-cursors-mode minor-mode-overriding-map-alist)
               hel-multiple-cursors-mode-map)
-        (add-hook 'pre-command-hook  #'hel--pre-commad-hook 90 t)
+        (add-hook 'pre-command-hook  #'hel--pre-command-hook 90 t)
         (add-hook 'post-command-hook #'hel--post-command-hook 90 t)
         (add-hook 'after-revert-hook #'hel-disable-multiple-cursors-mode 90 t)
         (setq hel-input-method current-input-method)
@@ -105,7 +105,7 @@
         (hel-switch-state (hel-initial-state)))
     ;; else
     (remove-hook 'post-command-hook #'hel--post-command-hook t)
-    (remove-hook 'pre-command-hook  #'hel--pre-commad-hook t)
+    (remove-hook 'pre-command-hook  #'hel--pre-command-hook t)
     (remove-hook 'after-revert-hook #'hel-disable-multiple-cursors-mode t)
     (remove-hook 'input-method-activate-hook #'hel-activate-input-method t)
     (remove-hook 'input-method-deactivate-hook #'hel-deactivate-input-method t)
