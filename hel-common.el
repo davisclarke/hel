@@ -762,7 +762,7 @@ be skipped."
         (hel-surround--search-outward-balanced left right direction limits regexp?)
       (let ((string (if (< direction 0) left right))
             (limit  (if (< direction 0) (car limits) (cdr limits))))
-        (hel-search string direction limit regexp?)))))
+        (hel-surround--search string direction limit regexp?)))))
 
 (defun hel-surround--search-outward-balanced
     (left right &optional direction limits regexp?)
@@ -782,10 +782,10 @@ that is used when BALANCED? argument is non-nil."
         (cl-block nil
           (while (> level 0)
             (let* ((pnt (point))
-                   (open-pos (hel-search open direction limit regexp?))
+                   (open-pos (hel-surround--search open direction limit regexp?))
                    (close-pos (progn
                                 (goto-char pnt)
-                                (hel-search close direction limit regexp?))))
+                                (hel-surround--search close direction limit regexp?))))
               (cond ((and close-pos open-pos)
                      (let ((close-dist (hel-distance pnt close-pos))
                            (open-dist  (hel-distance pnt open-pos)))
@@ -833,6 +833,30 @@ balanced expressions."
                       ((<= (car bounds) (point)))
                       ((< (point) (cdr bounds))))
                 bounds)))))))
+
+(cl-defun hel-surround--search (string &optional (direction 1) bound regexp? visible?)
+  "Search for STRING toward the DIRECTION.
+
+DIRECTION: 1 — search forward, -1 — search backward.
+
+BOUND is a buffer position that bounds the search toward the DIRECTION.
+The match found must not end after that position.
+
+If REGEXP? is non-nil STRING will considered a regexp pattern,
+otherwise — literally.
+
+If VISIBLE? is non-nil skip invisible matches.
+
+When REGEXP? is non-nil this function modifies the match data
+that `match-beginning', `match-end' and `match-data' access."
+  (let ((search-fun (if regexp? #'re-search-forward #'search-forward))
+        (found nil))
+    (while (and (not found)
+                (funcall search-fun string bound t direction))
+      (if (or (not visible?)
+              (hel-range-visible? (match-beginning 0) (match-end 0)))
+          (setq found t)))
+    (if found (point))))
 
 ;;; Mark ring
 
@@ -1179,31 +1203,6 @@ logical line on desired end of the region."
         (t 1)))
 
 (defsubst hel-distance (x y) (abs (- y x)))
-
-(cl-defun hel-search (string &optional (direction 1) bound regexp? visible?)
-  "Search for STRING toward the DIRECTION.
-
-DIRECTION: 1 — search forward, -1 — search backward.
-
-BOUND is a buffer position that bounds the search toward the DIRECTION.
-The match found must not end after that position.
-
-If REGEXP? is non-nil STRING will considered a regexp pattern,
-otherwise — literally.
-
-If VISIBLE? is non-nil skip invisible matches.
-
-When REGEXP? is non-nil this function modifies the match data
-that `match-beginning', `match-end' and `match-data' access."
-  (when-let* ((result (if regexp?
-                          (re-search-forward string bound t direction)
-                        (search-forward string bound t direction))))
-    (if (and visible?
-             ;; TODO
-             (or (invisible-p (match-beginning 0))
-                 (invisible-p (1- (match-end 0)))))
-        (hel-search string direction bound regexp? visible?)
-      result)))
 
 (cl-defun hel-looking-at (string &optional (direction 1) regexp?)
   "Return t if text directly after point toward the DIRECTION
