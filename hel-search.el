@@ -57,7 +57,7 @@ of the full regexp match."
   ;;   (cons (match-beginning 0) (match-end 0)))
   )
 
-(cl-defun +hel-search (regexp &optional bound (direction 1))
+(cl-defun hel-search (regexp &optional bound (direction 1))
   "Find the first match for the REGEXP toward the DIRECTION.
 Return list (MATCH-DATA OVERLAYS) where:
 - MATCH-DATA is the same as `match-data' returns;
@@ -204,7 +204,7 @@ Run search session if REGEXP is provided."
         (save-excursion
           (goto-char search-start)
           (let (match)
-            (while (setq match (+hel-search regexp search-end))
+            (while (setq match (hel-search regexp search-end))
               (-let* (((match-data _closed-overlays) match)
                       ((beg . end) (hel-match match-data)))
                 (if (= beg end)
@@ -233,7 +233,7 @@ Run search session if REGEXP is provided."
         (save-excursion
           (goto-char start)
           (while (and (< n hel-search-max-at-a-time)
-                      (setq match (+hel-search regexp end)))
+                      (setq match (hel-search regexp end)))
             (-let* (((match-data _closed-overlays) match)
                     ((beg . end) (hel-match match-data)))
               (cl-incf n)
@@ -310,12 +310,12 @@ Return (START END OVERLAYS INDEX) list where:
               (list start end closed-overlays index)))
         ;; else
         (if-let* ((regexp (hel-search-session-regexp self))
-                  (match (or (+hel-search regexp nil direction)
+                  (match (or (hel-search regexp nil direction)
                              (progn
                                (goto-char (if (< 0 direction)
                                               (point-min)
                                             (point-max)))
-                               (+hel-search regexp pos direction)))))
+                               (hel-search regexp pos direction)))))
             (-let* (((match-data closed-overlays) match)
                     ((start . end) (hel-match match-data)))
               (list start end closed-overlays nil)))))))
