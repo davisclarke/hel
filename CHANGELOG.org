@@ -1,4 +1,4 @@
-* [Unreleased]
+* [0.11.0]
 ** Added
 
 - Copy with ~universal-argument~ (=M-u y=) appends selection to the last item in
@@ -35,7 +35,10 @@
   and falls back to ~fill-region~ when a selection is active.
 
 - *[BREAKING]*
-  =hel-common.el= is renamed to =hel-lib.el=
+  =motion= state is renamed to =emacs= state.
+
+- *[BREAKING]*
+  =hel-common.el= file is renamed to =hel-lib.el=
 
 - *[BREAKING]*
   ~hel-fake-cursor-specific-vars~ variable is renamed to ~hel-fake-cursor-variables~.
@@ -50,6 +53,12 @@
 - *[BREAKING]*
   =hel-leader= extension is fully rewritten: the [[https://github.com/emacsorphanage/god-mode][God-Mode]] logic is replaced
   with an original one.
+
+** Fixed
+
+- Compatibility issue with Emacs 31. ([[https://github.com/anuvyklack/hel/issues/17][#17]])
+
+- =Esc= key in text terminal. ([[https://github.com/anuvyklack/hel/issues/1][#1]])
 
 * [0.10.0]
 ** Added

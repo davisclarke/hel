@@ -1,30 +1,35 @@
 #+title: Keybindings Reference
 
-You actually don't need this file. Emacs has an absolutely wonderful help
-system that neither Vim nor Helix has anything close to — it is self-documented.
+You actually don't need this file. Emacs has an absolutely wonderful help system
+that neither Vim nor Helix has anything close to — it is self-documented.
 
-You can always place cursor on any variable or command you're interested in,
-press =: helpful-at-point= (or =M-x helpful-at-point=) from [[https://github.com/Wilfred/helpful][helpful]] package to see
-the full documentation about it. Bind it to key for more convenient access. Vim
-uses =K= key for such things (which is available while there is only one cursor in
-the buffer), another good choice is =M= since it's unused in Hel.
+You can always place cursor on any variable or command you're interested in, press
+=: helpful-at-point= (or =M-x helpful-at-point=) from [[https://github.com/Wilfred/helpful][helpful]] package to see the full
+documentation about it. Bind it to key for more convenient access. Vim uses =K= key
+for such things (which is available while there is only one cursor in the buffer),
+another good choice is =M= since it's unused in Hel.
 #+begin_src emacs-lisp
 (hel-keymap-set emacs-lisp-mode-map :state 'normal
   "M" 'helpful-at-point)
 #+end_src
 
-Hel keybindings are defined in the =hel-keybindings.el= file. Using the advice
-above, you can read the documentation for any command bound to a key you’re
-interested in.
+Hel keybindings are defined in the =hel-keybindings.el= file. Using the advice above,
+you can read the documentation for any command bound to a key you’re interested in.
 
 * Emacs state
 
 Emacs state is the default state for special buffers: grep results, error
 lists, file managers — anything not intended for text editing. A simple
-heuristic is used: if any letter key is not self-inserting, Hel enables Emacs
-state; otherwise, it uses Normal state.
+heuristic is used: if any letter key is not self-inserting, Hel enables
+Emacs state; otherwise, it uses Normal state.
 
 In Emacs state Hel provide service keys to control Emacs itself.
+
+#+begin_quote
+[!IMPORTANT]
+~universal-argument~ is rebound to =M-u= because =C-u= is used for scrolling and =M-u=
+by default is bound to ~upcase-word~, for which Hel has itself version on =M-`= or =gU=.
+#+end_quote
 
 - =:= :: Emacs analoug of command pallete. (Native key is =M-x=)
 
@@ -32,23 +37,18 @@ In Emacs state Hel provide service keys to control Emacs itself.
   Open command palette with only the commands that make sense in the current
   buffer. (Native key is =M-X=)
 
-- =M-u= ::
-  Emacs universal argument. Native key is =C-u=, but Hel use it for scrolling,
-  and =M-u= by default is bound to ~upcase-word~, for which Hel has itself version
-  on =M-`= or =gU=.
-
 - =SPC= :: Leader key (if ~hel-leader~ extension is installed)
 
 - =i= ::
-  Switch to Normal state. This allows you to select and copy arbitrary text in
-  special modes. To switch back, use =zx= or =C-x C-s= (~hel-emacs-state~).
+  Switch to Normal state. This allows you to select and copy arbitrary text
+  in special modes. To switch back, use =zx= or =C-x C-s= (~hel-emacs-state~).
 
 ** Windows
 
 - =C-w s= / =C-w v= :: Split window *horizontally* / *vertically*.
 
-- =C-w c= :: Close current window, if it was the last window on the tab —
-  close the tab.
+- =C-w c= ::
+  Close current window, if it was the last window on the tab — close the tab.
 
 - =C-w d= :: Kill current buffer.
 
@@ -72,8 +72,8 @@ All window commands also duplicated with =C-= prefix for convenience: =C-w C-s=
 =C-w C-v=, etc.
 
 A secondary prefix for window commands is available on =C-c w=. It is useful when
-the =C-w= prefix is unavailable, such as in terminal emulators, ~picture-mode~,
-and similar modes.
+the =C-w= prefix is unavailable, such as in terminal emulators, ~picture-mode~, and
+similar modes.
 
 ** Scrolling
 
@@ -217,12 +217,12 @@ All keys available in Emacs state are also work in Normal state.
 - =C= / =M-c= :: Copy selection (cursor) *down* / *up*.
 
 - =s= ::
-  Interactively enter regexp and create cursors for all matches withing active
-  selections.
+  Interactively enter regexp and create cursors for all matches withing
+  active selections.
 
 - =S= ::
-  Interactively enter regexp and create cursors for complements to all matches
-  to regexp withing active selections.
+  Interactively enter regexp and create cursors for complements to all
+  matches to regexp withing active selections.
 
 - =M-s= :: Split selections into separate lines.
 
@@ -249,9 +249,9 @@ All keys available in Emacs state are also work in Normal state.
 - =v= :: Toggle extend selection.
 
 - =x= / =X= ::
-  Select current visual (if ~visual-line-mode~ is active) or logical line on first
-  invocation. On subsequent calls *extend* / *contract* linewise selection down
-  when cursor is at the end of the selection, or up when cursor is at the
+  Select current visual (if ~visual-line-mode~ is active) or logical line on
+  first invocation. On subsequent calls *extend* / *contract* linewise selection
+  down when cursor is at the end of the selection, or up when cursor is at the
   beginning of the selection.
 
 - =%= :: Select whole buffer.
@@ -265,9 +265,10 @@ All keys available in Emacs state are also work in Normal state.
 - =J= :: Join lines inside selection.
 
 *** Mark
-Here the word "mark" is used as synonym to "select", to form the mnemonic rule
-for =m= prefix. Also, this is in line with Emacs tradition which has commands like
-~mark-word~ which use the word "mark" in this particular sense.
+
+Here the word "mark" is used as synonym to "select", to form the mnemonic
+rule for =m= prefix. Also, this is in line with Emacs tradition which has
+commands like ~mark-word~ which use the word "mark" in this particular sense.
 
 - =mw=, =mW= or =miw=, =miW= :: Mark inner word/WORD.
 
@@ -332,8 +333,7 @@ for =m= prefix. Also, this is in line with Emacs tradition which has commands li
 
 - =*= ::
   Construct regexp from all current selections and store it in the ~/~ register.
-  Auto-detect word boundaries at the beginning and end of the search
-  patterns.
+  Auto-detect word boundaries at the beginning and end of the search patterns.
 
 - =M-*= ::
   Construct regexp from all current selections and store it in the ~/~ register.
@@ -349,8 +349,8 @@ for =m= prefix. Also, this is in line with Emacs tradition which has commands li
   ~hel-backward-mark-ring~ command.
 
 - =C-O= / =C-I= ::
-  Go-to previous/next position in the ~global-mark-ring~ (read about it in Emacs
-  manual).
+  Go-to previous/next position in the ~global-mark-ring~ (read about
+  it in Emacs manual).
 
 ** Miscellaneous
 
@@ -360,8 +360,8 @@ for =m= prefix. Also, this is in line with Emacs tradition which has commands li
 - =gc= :: comment selection
 
 - =go= :: ~imenu~
-- =ga= :: Show various information about the position before cursor: code point,
-  faces, overlays, etc.
+- =ga= :: Display various information about the position at cursor:
+  character code point, faces, overlays, etc.
 
 - =zn= :: Narrow buffer to selection.
 - =zw= :: Remove narrowing.
@@ -372,7 +372,7 @@ for =m= prefix. Also, this is in line with Emacs tradition which has commands li
 - =gf= :: Open file path under cursor (like in Vim)
 - =gx= :: Open URL under cursor (like in Vim)
 
-- =[ SPC= / =] SPC= :: Add empty line above/below.
+- =[ SPC= / =] SPC= :: Add empty line *above* / *below*.
 
 ** Xref (Emacs go-to definition framework)
 
@@ -383,8 +383,8 @@ for =m= prefix. Also, this is in line with Emacs tradition which has commands li
 - =gr= :: Find all references.
 
 - =[x= / =]x= ::
-  Go to the *previous* / *next* position in xref history. It appeares to be very handy
-  to have these positions in a stack separate from the jumplist.
+  Go to the *previous* / *next* position in xref history. It appeares to be very
+  handy to have these positions in a stack separate from the jumplist.
 
 * Insert state
 

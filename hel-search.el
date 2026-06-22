@@ -4,7 +4,7 @@
 ;;
 ;; Author: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Maintainer: Yuriy Artemyev <anuvyklack@gmail.com>
-;; Version: 0.10.0
+;; Version: 0.11.0
 ;; Homepage: https://github.com/anuvyklack/hel
 ;; Package-Requires: ((emacs "29.1"))
 ;;
@@ -168,8 +168,8 @@ Run search session if REGEXP is provided."
 (defun hel-search-session-cleanup (self)
   "Destructor for `hel-search-session' objects."
   (-some-> (hel-search-session-timer self) (cancel-timer))
-  ;; The overlays slot may be either a list (during a scan) or a vector (after
-  ;; scan is completed); `mapc' iterates both.
+  ;; The overlays slot may be either a list (during a scan) or a vector
+  ;; (after scan is completed); `mapc' iterates both.
   (mapc #'delete-overlay (hel-search-session-overlays self))
   (setf (hel-search-session-counter self)     0
         (hel-search-session-total self)       nil
