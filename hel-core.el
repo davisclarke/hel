@@ -309,8 +309,10 @@ STATE is the state's symbolic name."
                  thereis (hel-initial-state-for-mode mode))
         ;; Check major mode
         (hel-initial-state-for-mode major-mode t)
-        (setq hel-mode-map-alist nil)
-        (if (hel-letters-are-self-insert-p) 'normal 'motion))))
+        ;; Temporarily strip Hel's emulation keymaps to inspects the major
+        ;; mode's own bindings.
+        (let ((hel-mode-map-alist nil))
+          (if (hel-letters-are-self-insert-p) 'normal 'motion)))))
 
 (defun hel-initial-state-for-mode (mode &optional follow-parent checked-modes)
   "Return the Hel state to use for MODE or its alias.
