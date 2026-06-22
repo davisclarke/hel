@@ -165,6 +165,17 @@ Hel is in Motion state. All other attributes are ignored."
              (add-hook 'minibuffer-setup-hook 'hel-local-mode)
            (remove-hook 'minibuffer-setup-hook 'hel-local-mode))))
 
+(defcustom hel-esc-delay 0.01
+  "Seconds to wait for another key after a terminal Esc keypress.
+If no further event arrives within this time, the lone `\\e' is
+translated to the `escape' event so Hel's `<escape>' bindings fire.
+Otherwise it is left as the standard ESC prefix (e.g. for `M-x')."
+  :type 'number
+  :group 'hel)
+
+(defvar hel-inhibit-esc nil
+  "If non-nil, never translate a terminal `\\e' to `escape'.")
+
 (defcustom hel-use-pcre-regex t
   "If non-nil use PCRE regexp syntax instead of Emacs regular expressions."
   :type 'integer

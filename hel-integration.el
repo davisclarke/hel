@@ -112,25 +112,44 @@ in the command loop, and the fake cursors can pick up on those instead."
 
 (add-hook 'hel-mode-hook #'hel--handle-theme-change-h)
 
-;;; Distinguish `TAB' from `C-i' and `RET' from `C-m'
+;;; Terminal key decoding for Hel
 
-(defun hel-make-C-i-and-C-m-available ()
-  "Make Emacs distinguish `TAB' from `C-i' and `RET' from `C-m'."
-  (when (display-graphic-p) ;; do translation only in gui
-    (keymap-set input-decode-map "C-i" [C-i])
-    (keymap-set input-decode-map "C-m" [C-m])))
+(defun hel-esc (map)
+  "Translate `\\e' to `escape' if no further event arrives."
+  (if (and (not hel-inhibit-esc)
+           (or hel-local-mode
+               (active-minibuffer-window))
+           (let ((keys (this-single-command-keys)))
+             (and (length> keys 0)
+                  (= (aref keys (1- (length keys))) ?\e)))
+           (sit-for hel-esc-delay))
+      (prog1 [escape]
+        (when defining-kbd-macro
+          (end-kbd-macro)
+          (setq last-kbd-macro (vconcat last-kbd-macro [escape]))
+          (start-kbd-macro t t)))
+    map))
 
-(hel-make-C-i-and-C-m-available)
+(defun hel-setup-terminal-keys (frame)
+  "Make Emacs correctly handle ESC in terminal, and distinguish TAB from
+C-i and RET from C-m".
+  (with-selected-frame frame
+    (if (eq t (terminal-live-p (frame-terminal)))
+        ;; Text terminal
+        (progn
+          (define-key input-decode-map [?\e]
+                      (list 'menu-item "" esc-map :filter #'hel-esc))
+          ;; Kitty keyboard protocol:
+          ;; https://sw.kovidgoyal.net/kitty/keyboard-protocol/
+          (define-key input-decode-map "\e[105;5u" [C-i])
+          (define-key input-decode-map "\e[109;5u" [C-m]))
+      ;; GUI Emacs
+      (keymap-set input-decode-map "C-i" [C-i])
+      (keymap-set input-decode-map "C-m" [C-m]))))
 
-;; For daemon mode
-(add-hook 'after-make-frame-functions
-          (defun hel--after-make-frame-hook (frame)
-            (with-selected-frame frame
-              (hel-make-C-i-and-C-m-available))))
-
-;; (single-key-description 'C-i)
-;; (key-valid-p "<C-i>")
-;; (key-valid-p "C-<i>")
+;; Patch existing and future terminals.
+(-each (frame-list) #'hel-setup-terminal-keys)
+(add-hook 'after-make-frame-functions #'hel-setup-terminal-keys)
 
 ;;; Advices for general commands not related to particular packages
 
