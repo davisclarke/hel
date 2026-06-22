@@ -112,7 +112,7 @@ in the command loop, and the fake cursors can pick up on those instead."
 
 (add-hook 'hel-mode-hook #'hel--handle-theme-change-h)
 
-;;; Terminal key decoding for Hel
+;;; ESC, C-i and C-m keys
 
 (defun hel-esc (map)
   "Translate `\\e' to `escape' if no further event arrives."
@@ -132,9 +132,9 @@ in the command loop, and the fake cursors can pick up on those instead."
 
 (defun hel-setup-terminal-keys (frame)
   "Make Emacs correctly handle ESC in terminal, and distinguish TAB from
-C-i and RET from C-m".
+C-i and RET from C-m."
   (with-selected-frame frame
-    (if (eq t (terminal-live-p (frame-terminal)))
+    (if (eq t (terminal-live-p (frame-terminal frame)))
         ;; Text terminal
         (progn
           (define-key input-decode-map [?\e]
