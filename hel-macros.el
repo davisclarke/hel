@@ -16,7 +16,7 @@
 (require 'map)
 (require 'dash)
 (require 'hel-vars)
-(require 'hel-common)
+(require 'hel-lib)
 
 (cl-defmacro hel-define-advice (symbol (how lambda-list &optional (name 'hel))
                                        &rest body)

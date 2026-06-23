@@ -1,4 +1,4 @@
-;;; hel-common.el --- Common functions -*- lexical-binding: t -*-
+;;; hel-lib.el --- Common functions -*- lexical-binding: t -*-
 ;;
 ;; Copyright © 2025-2026 Yuriy Artemyev
 ;;
@@ -1488,5 +1488,5 @@ Can be used as advice."
   (setq hel-this-command this-command))
 
 ;;; .
-(provide 'hel-common)
-;;; hel-common.el ends here
+(provide 'hel-lib)
+;;; hel-lib.el ends here

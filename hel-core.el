@@ -33,7 +33,7 @@
 (require 'map)
 (require 'dash)
 (require 'hel-vars)
-(require 'hel-common)
+(require 'hel-lib)
 (require 'hel-multiple-cursors-core)
 
 ;; Declarations

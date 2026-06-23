@@ -41,7 +41,7 @@
 (require 'dash)
 (require 'subr-x)
 (require 'rect)
-(require 'hel-common)
+(require 'hel-lib)
 
 ;;; Undo
 

@@ -18,7 +18,7 @@
 ;;; Code:
 
 (require 'hel-vars)
-(require 'hel-common)
+(require 'hel-lib)
 (require 'hel-macros)
 (require 'hel-multiple-cursors-core)
 (require 'hel-core)
