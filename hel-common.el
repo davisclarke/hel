@@ -1017,18 +1017,21 @@ BEG, END position and done the indentation."
   "If selection ends at the end of buffer, and buffer doesn't ends with newline
 character -- add it and adjust selection."
   ;; This function assumes that region is active, but doesn't check it!
-  (if (< (mark-marker) (point))
-      (when (and (eobp) (not (bolp)))
-        (let ((deactivate-mark nil))
-          (insert ?\n)))
-    ;; else
-    (when (= (mark-marker) (point-max))
-      (save-excursion
-        (goto-char (mark-marker))
-        (when (and (eobp) (not (bolp)))
-          (let ((deactivate-mark nil))
-            (insert ?\n))
-          (move-marker (mark-marker) (point)))))))
+  (cond ((or (minibufferp) buffer-read-only)
+         nil)
+        ;; region is forward
+        ((< (mark-marker) (point))
+         (when (and (eobp) (not (bolp)))
+           (let ((deactivate-mark nil))
+             (insert ?\n))))
+        ;; else region is backward
+        ((= (mark-marker) (point-max))
+         (save-excursion
+           (goto-char (mark-marker))
+           (when (and (eobp) (not (bolp)))
+             (let ((deactivate-mark nil))
+               (insert ?\n))
+             (move-marker (mark-marker) (point)))))))
 
 ;;; Fold opening
 
