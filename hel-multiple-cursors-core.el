@@ -434,13 +434,14 @@ CURSORS-POSITIONS is an alist as returned by `hel-cursors-positions'."
              (unless (assoc id cursors-positions #'eql)
                (hel--delete-fake-cursor cursor)))
            hel--cursors-table)
-  (cl-loop for (id point mark) in cursors-positions
-           do (pcase id
-                (0 (hel-set-region mark point))
-                (_ (let ((mark-active (not (null mark))))
-                     (if-let* ((cursor (gethash id hel--cursors-table)))
-                         (hel-move-fake-cursor cursor point mark :update)
-                       (hel--create-fake-cursor-1 id point mark))))))
+  (-each cursors-positions
+    (-lambda ((id point mark))
+      (pcase id
+        (0 (hel-set-region mark point))
+        (_ (let ((mark-active (not (null mark))))
+             (if-let* ((cursor (gethash id hel--cursors-table)))
+                 (hel-move-fake-cursor cursor point mark :update)
+               (hel--create-fake-cursor-1 id point mark)))))))
   (hel-auto-multiple-cursors-mode))
 
 ;;; Executing commands for real and fake cursors
