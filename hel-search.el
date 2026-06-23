@@ -304,16 +304,17 @@ Return (START END OVERLAYS INDEX) list where:
                    (overlay (elt overlays index))
                    (start (overlay-start overlay))
                    (end (overlay-end overlay))
-                   (closed-overlays (let ((val (hel-range-visible? start end)))
-                                      (if (consp val) val))))
+                   (closed-overlays
+                    (->> (overlays-in start end)
+                         (-filter (lambda (ov)
+                                    (and (invisible-p (overlay-get ov 'invisible))
+                                         (overlay-get ov 'isearch-open-invisible)))))))
               (list start end closed-overlays index)))
         ;; else
         (if-let* ((regexp (hel-search-session-regexp self))
                   (match (or (hel-search regexp nil direction)
                              (progn
-                               (goto-char (if (< 0 direction)
-                                              (point-min)
-                                            (point-max)))
+                               (goto-char (if (< 0 direction) (point-min) (point-max)))
                                (hel-search regexp pos direction)))))
             (-let* (((match-data closed-overlays) match)
                     ((start . end) (hel-match match-data)))
@@ -606,36 +607,24 @@ Do not auto-detect word boundaries in the search pattern."
                          (-map (-lambda ((_id point mark))
                                  (if (< point mark)
                                      (cons point mark)
-                                   (cons mark point))))))
-           ;; Closed overlays that overlap regions.
-           (overlays (->> regions
-                          (-mapcat (-lambda ((beg . end))
-                                     (overlays-in beg end)))
-                          (-uniq)
-                          (-filter (lambda (ov)
-                                     (invisible-p (overlay-get ov 'invisible)))))))
+                                   (cons mark point)))))))
       (deactivate-mark)
       (-each (hel-all-fake-cursors) #'hel--delete-fake-cursor)
       (setq hel--extend-selection nil)
-      (-each overlays #'hel-temporary-open-overlay)
       (if (setq regions (hel-select-interactively-in-regions regions invert))
           (progn
-            (-let [(mark . point) (car regions)]
-              (hel-set-region mark point))
-            (-each (cdr regions) (-lambda ((mark . point))
-                                   (hel-create-fake-cursor point mark)))
-            (when overlays
-              ;; Sort overlays by starting position.
-              (setq overlays (sort overlays (lambda (ov1 ov2)
-                                              (< (overlay-start ov1)
-                                                 (overlay-start ov2)))))
-              (-let [(overlap not-overlap) (hel-select--partition-overlays-by-regions
-                                            overlays regions)]
-                (-each overlap #'hel-open-overlay)
-                (-each not-overlap #'hel-close-temporary-opened-overlay))))
+            ;; Real cursor
+            (-let [(start . end) (car regions)]
+              (hel-set-region start end)
+              (-each (overlays-in start end) #'hel-open-overlay))
+            ;; Fake cursors
+            (save-excursion
+              (cl-loop for (start . end) in (cdr regions) do
+                       (goto-char start)
+                       (-each (overlays-in start end) #'hel-open-overlay)
+                       (hel-create-fake-cursor end start))))
         ;; Else restore original cursors.
-        (hel-place-cursors cursors-positions)
-        (-each overlays #'hel-close-temporary-opened-overlay)))
+        (hel-place-cursors cursors-positions)))
     (hel-auto-multiple-cursors-mode)))
 
 ;; S
@@ -655,7 +644,14 @@ Shows a live preview, a match count, and scrolls the first match into view."
         (start-pos (->> regions (-map #'car) (apply #'min)))
         (win-start (window-start))
         (win-hscroll (window-hscroll))
-        overlays)
+        ;; Closed overlays that hide REGIONS.
+        (closed-overlays (->> regions
+                              (-mapcat (-lambda ((beg . end))
+                                         (overlays-in beg end)))
+                              (-uniq)
+                              (-filter (lambda (ov)
+                                         (invisible-p (overlay-get ov 'invisible))))))
+        hl-overlays)
     (cl-flet*
         ((highlight ((start . end))
            (-doto (make-overlay start end nil t nil)
@@ -674,26 +670,28 @@ Shows a live preview, a match count, and scrolls the first match into view."
                  (hel-recenter-point-on-jump
                    ;; (unless (pos-visible-in-window-p min-pos))
                    (goto-char (apply #'min (-map #'car ranges)))
-                   (setq overlays (-map #'highlight ranges)))
+                   (setq hl-overlays (-map #'highlight ranges)))
                ;; else no matches
-               (setq overlays (-map #'highlight regions))
+               (setq hl-overlays (-map #'highlight regions))
                (let ((message-log-max nil))
                  (message (propertize "No matches" 'face 'error))))))
          (after (_beg _end _len)
            (unless (input-pending-p)
-             (-each overlays #'delete-overlay)
+             (-each hl-overlays #'delete-overlay)
              (update (let ((s (minibuffer-contents-no-properties)))
                        (unless (string-empty-p s)
                          (hel-pcre-to-elisp s))))))
          (stop ()
-           (-each overlays #'delete-overlay))
+           (-each hl-overlays #'delete-overlay)
+           (-each closed-overlays #'hel-close-temporary-opened-overlay))
          (start ()
+           (-each closed-overlays #'hel-temporary-open-overlay)
+           (setq hl-overlays (-map #'highlight regions))
            (add-hook 'after-change-functions #'after nil t)
            (add-hook 'minibuffer-exit-hook #'stop nil t)))
       ;; main body
       (when-let* ((input (condition-case nil
                              (minibuffer-with-setup-hook #'start
-                               (setq overlays (-map #'highlight regions))
                                (hel-read-regexp (if invert "split: " "select: ")))
                            (quit))) ;; "C-g"
                   ((stringp input))
@@ -721,30 +719,6 @@ Shows a live preview, a match count, and scrolls the first match into view."
       (if invert
           (hel-invert-ranges ranges start end)
         ranges))))
-
-(defun hel-select--partition-overlays-by-regions (overlays regions)
-  "Separate OVERLAYS into those that overlap any region in REGIONS and those
-that do not. Return a list of two lists: (OVERLAP NOT-OVERLAP).
-
-Both REGIONS and OVERLAYS should be sorted by starting position."
-  (let ( region rs re
-         overlay ovs ove
-         overlap not-overlap)
-    (while (and regions overlays)
-      (unless region (-setq (region &as rs . re) (car regions)))
-      (unless overlay (setq overlay (car overlays)
-                            ovs (overlay-start overlay)
-                            ove (overlay-end overlay)))
-      (cond ((not (or (<= re ovs) (<= ove rs)))
-             (push (pop overlays) overlap)
-             (setq overlay nil))
-            ((< ove re)
-             (push (pop overlays) not-overlap)
-             (setq overlay nil))
-            (t
-             (pop regions)
-             (setq region nil))))
-    (list overlap (append not-overlap overlays))))
 
 ;;; Filter: K, M-K
 

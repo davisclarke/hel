@@ -1080,34 +1080,29 @@ Return values:
           visible?)))))
 
 (defun hel-open-overlay (ov)
-  "Some packages (like `outline') for correct working of
-`isearch-open-invisible' function require cursor to be inside overlay."
-  (when (and (hel-overlay-live-p ov)
-             (invisible-p (overlay-get ov 'invisible)))
-    (if-let* ((open-fun (overlay-get ov 'isearch-open-invisible)))
-        (save-excursion
-          ;; Some packages (such as `outline') require point to be inside
-          ;; the overlay for `isearch-open-invisible' to work correctly.
-          (goto-char (-> (+ (overlay-start ov) (overlay-end ov))
-                         (/ 2)))
-          (funcall open-fun ov))
+  "Permanently open folded OVERLAY.
+See `isearch-open-necessary-overlays'."
+  (when (invisible-p (overlay-get ov 'invisible))
+    (if-let* ((fun (overlay-get ov 'isearch-open-invisible)))
+        (funcall fun ov)
       (overlay-put ov 'invisible nil))))
 
-;; See `isearch-open-overlay-temporary' and comments inside.
 (defun hel-temporary-open-overlay (ov)
+  "See `isearch-open-overlay-temporary'."
   ;; Modes can provide custom function to open overlays termporary.
-  (if-let* ((open-fun (overlay-get ov 'isearch-open-invisible-temporary)))
-      (funcall open-fun ov nil)
+  (if-let* ((fun (overlay-get ov 'isearch-open-invisible-temporary)))
+      (funcall fun ov nil)
     ;; Else set `invisible' property to nil, and store the original value to
     ;; `isearch-invisible' property.
     (overlay-put ov 'isearch-invisible (overlay-get ov 'invisible))
     (overlay-put ov 'invisible nil)))
 
 (defun hel-close-temporary-opened-overlay (ov)
+  "See `isearch-open-overlay-temporary'."
   ;; If this exists it means that the overlay was opened using this function,
   ;; not by tweaking the overlay properties.
-  (if-let* ((open-fun (overlay-get ov 'isearch-open-invisible-temporary)))
-      (funcall open-fun ov t)
+  (if-let* ((fun (overlay-get ov 'isearch-open-invisible-temporary)))
+      (funcall fun ov t)
     ;; Else restore the original value of `invisible' property.
     (overlay-put ov 'invisible (overlay-get ov 'isearch-invisible))
     (overlay-put ov 'isearch-invisible nil)))
@@ -1320,7 +1315,8 @@ the returned list to the original symbol like this:
 
 (defun hel-pcre-to-elisp (regexp)
   "Convert PCRE REGEXP into Elisp one if Hel configured to use PCRE syntax."
-  (if hel-use-pcre-regex
+  (if (and hel-use-pcre-regex
+           (not (string-empty-p regexp)))
       (condition-case err
           (pcre-to-elisp regexp)
         (rxt-invalid-regexp
