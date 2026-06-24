@@ -18,23 +18,14 @@
 (require 'hel-vars)
 (require 'hel-common)
 
-(defmacro hel-define-advice (symbol args &rest body)
+(cl-defmacro hel-define-advice (symbol (how lambda-list &optional (name 'hel))
+                                       &rest body)
   "Wrapper around `define-advice' that automatically add/remove advice
-when `hel-mode' is toggled on or off.
-
-\(fn SYMBOL (HOW LAMBDA-LIST &optional NAME) &rest BODY)"
+when `hel-mode' is toggled on or off."
   (declare (indent 2) (doc-string 3) (debug (sexp sexp def-body)))
-  (unless (listp args)
-    (signal 'wrong-type-argument (list 'listp args)))
-  (unless (<= 2 (length args) 4)
-    (signal 'wrong-number-of-arguments (list 2 4 (length args))))
-  (let* ((how (nth 0 args))
-         (lambda-list (nth 1 args))
-         (name (or (nth 2 args) 'hel))
-         (advice (intern (format "%s@%s" symbol name))))
+  (let ((advice (intern (format "%s@%s" symbol name))))
     `(prog1 (defun ,advice ,lambda-list ,@body)
-       (cl-pushnew '(,symbol ,how ,advice) hel--advices
-                   :test #'equal)
+       (cl-pushnew '(,symbol ,how ,advice) hel--advices :test #'equal)
        (when hel-mode
          (advice-add ',symbol ,how ',advice)))))
 

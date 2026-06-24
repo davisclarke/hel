@@ -22,25 +22,22 @@
 
 ;;; Macros
 
-(defmacro hel-motion-loop (spec &rest body)
+(cl-defmacro hel-motion-loop ((dir count) &rest body)
   "Loop a certain number of times.
-Evaluate BODY repeatedly COUNT times with DIRECTION bound to 1 or -1,
-depending on the sign of COUNT. Each iteration must move point; if point
-does not change, the loop immediately quits.
+Evaluate BODY repeatedly COUNT times with DIR bound to 1 or -1, depending on
+the sign of COUNT. Each iteration must move point; if point does not change,
+the loop immediately quits.
 
 Returns the count of steps left to move.  If moving forward, that is
-COUNT minus number of steps moved; if backward, COUNT plus number moved.
-
-\(fn (DIRECTION COUNT) BODY...)"
+COUNT minus number of steps moved; if backward, COUNT plus number moved."
   (declare (indent 1)
            (debug ((symbolp form) body)))
-  (-let (((dir count) spec))
-    (macroexp-let2 symbolp n count
-      `(let ((,dir (hel-sign ,n)))
-         (while (and (/= ,n 0)
-                     (/= (point) (progn ,@body (point))))
-           (cl-callf - ,n ,dir))
-         ,n))))
+  (macroexp-let2 symbolp n count
+    `(let ((,dir (hel-sign ,n)))
+       (while (and (/= ,n 0)
+                   (/= (point) (progn ,@body (point))))
+         (cl-callf - ,n ,dir))
+       ,n)))
 
 (defmacro hel-recenter-point-on-jump (&rest body)
   "Recenter point on jumps during BODY evaluating if it lands out of the screen.
@@ -96,7 +93,7 @@ saved as markers and correctly handle case when text was inserted before region.
 ;;; Motions
 
 (defun hel-forward-following-thing (thing &optional count)
-  "Move forward to the end of the COUNT-th following THING.
+  "Move forward to the end of the COUNT following THING.
 `forward-thing' first moves to the  boundary of the current THING, then to the
 next THING. This function skips first step and always moves to the next THING."
   (or count (setq count 1))
