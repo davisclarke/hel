@@ -640,7 +640,8 @@ KEY / DEFINITION pairs.
   (declare (indent defun))
   (unless hel-overriding-local-map
     (setq hel-overriding-local-map (make-sparse-keymap)))
-  (apply #'hel-keymap-set hel-overriding-local-map args))
+  (apply #'hel-keymap-set hel-overriding-local-map args)
+  (hel-update-active-keymaps))
 
 ;;; Cursor shape and color
 
