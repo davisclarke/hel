@@ -277,8 +277,10 @@ When ARG is non-positive integer and Hel is in %s — disable it.\n\n%s"
 
 (defun hel-switch-state (state)
   "Switch Hel into STATE."
-  (when (and state
-             (not (eq state hel-state)))
+  (if (eq state hel-state)
+      ;; When state is unchanged only rescan keymaps.
+      (hel-update-active-keymaps)
+    ;; else
     (-> (hel-state-property state :function)
         (funcall 1))))
 
