@@ -147,7 +147,7 @@ RANGES is a list of cons cells with positions (START . END)."
   (scan-pos nil :documentation "Where the buffer scan left off.")
   ;; It is a list during scanning and a sorted vector after the scan completes.
   (overlays nil :documentation "Search matches overlays.")
-  (buffer nil :read-only t)
+  (buffer   nil :read-only t)
   (buffer-hash nil))
 
 (cl-defun hel-search-session-create ( &optional regexp start end
@@ -192,32 +192,35 @@ Run search session if REGEXP is provided."
                        nil 'hel-search-session--scan-window self))))
 
 (defun hel-search-session--scan-window (self)
-  (if (not (buffer-live-p (hel-search-session-buffer self)))
-      (hel-search-session-cleanup self)
-    (with-current-buffer (hel-search-session-buffer self)
-      (let ((regexp (hel-search-session-regexp self))
-            (search-start (max (or (hel-search-session-start self) (point-min))
-                               (window-group-start)))
-            (search-end   (min (or (hel-search-session-end self) (point-max))
-                               (window-group-end)))
-            window-overlays)
-        (save-excursion
-          (goto-char search-start)
-          (let (match)
-            (while (setq match (hel-search regexp search-end))
-              (-let* (((match-data _closed-overlays) match)
-                      ((beg . end) (hel-match match-data)))
-                (if (= beg end)
-                    ;; Ensure forward progress on zero-length matches like
-                    ;; "^" or "$" to avoid an infinite loop.
-                    (unless (eobp) (forward-char 1))
-                  (push (hel-search-session--highlight-overlay beg end)
-                        window-overlays))))))
-        (cl-callf nreverse window-overlays)
-        (setf (hel-search-session-timer self)
-              (run-at-time hel-lazy-highlight-interval nil
-                           'hel-search-session--scan-buffer
-                           self window-overlays))))))
+  (let* ((buffer (hel-search-session-buffer self))
+         (window (get-buffer-window buffer t)))
+    (cond ((not (buffer-live-p buffer))
+           (hel-search-session-cleanup self))
+          (window
+           (with-current-buffer (hel-search-session-buffer self)
+             (let* ((regexp (hel-search-session-regexp self))
+                    (search-start (max (or (hel-search-session-start self) (point-min))
+                                       (window-group-start window)))
+                    (search-end   (min (or (hel-search-session-end self) (point-max))
+                                       (window-group-end window t)))
+                    window-overlays)
+               (save-excursion
+                 (goto-char search-start)
+                 (let (match)
+                   (while (setq match (hel-search regexp search-end))
+                     (-let* (((match-data _closed-overlays) match)
+                             ((beg . end) (hel-match match-data)))
+                       (if (= beg end)
+                           ;; Ensure forward progress on zero-length matches like
+                           ;; "^" or "$" to avoid an infinite loop.
+                           (unless (eobp) (forward-char 1))
+                         (push (hel-search-session--highlight-overlay beg end)
+                               window-overlays))))))
+               (cl-callf nreverse window-overlays)
+               (setf (hel-search-session-timer self)
+                     (run-at-time hel-lazy-highlight-interval nil
+                                  'hel-search-session--scan-buffer
+                                  self window-overlays))))))))
 
 (defun hel-search-session--scan-buffer (self window-overlays)
   (if (not (buffer-live-p (hel-search-session-buffer self)))
@@ -416,10 +419,7 @@ Return nil when no match exists."
 
 (cl-defun hel-search-interactively (prompt &optional (direction 1))
   (redisplay) ; To ensure `window-start' position is not stale.
-  (let* ((ss (hel-search-session--create
-              :buffer (current-buffer)
-              :buffer-hash (buffer-hash)
-              :callback #'hel-search-session--update-modeline))
+  (let* ((ss (hel-search-session-create))
          (point (point))
          (win-start (window-start))
          (win-hscroll (window-hscroll))
