@@ -1447,6 +1447,25 @@ REST contains all other elements."
              (setq lol (-non-nil (-map #'cdr lol)))))
     (nreverse result)))
 
+(defun hel-replace-chars (beg end char)
+  "Replace each non-newline character between BEG and END with CHAR."
+  (save-excursion
+    (goto-char beg)
+    (while (< (point) end)
+      (if (eq (char-after) ?\n)
+          (forward-char 1)
+        (insert-char char)
+        (delete-char 1)))))
+
+(defun hel-read-char-and-replace (beg end)
+  "Replace characters in BEG..END with an interactive entered one."
+  (when (< beg end)
+    (let ((overlay (-doto (make-overlay beg end nil t nil)
+                     (overlay-put 'face 'region))))
+      (unwind-protect
+          (hel-replace-chars beg end (read-char "replace: " t))
+        (delete-overlay overlay)))))
+
 ;;; Advices
 
 (declare-function hel-extend-selection "hel-commands")

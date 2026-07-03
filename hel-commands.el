@@ -763,26 +763,45 @@ With \\[universal-argument] paste the last coppied multiple selections from the
   (interactive "*p")
   (hel-paste-pop (- count)))
 
-;; R
-(hel-define-command hel-replace-with-kill-ring ()
-  "Replace selection content with yanked text from `kill-ring'."
+;; r
+(hel-define-command hel-replace-char (count)
+  "Replace character(s) with one read from the keyboard.
+With an active selection, replace every character in it with the typed
+one. With no selection — replace COUNT characters before point."
   :multiple-cursors t
-  (interactive "*")
-  (when (use-region-p)
-    (let ((deactivate-mark nil)
-          (dir (hel-region-direction)))
-      (setq hel--yank-transform-linewise-selection?
-            (hel-linewise-selection-p dir))
-      (delete-region (region-beginning) (region-end))
-      (cl-letf ((yank-transform-functions (cons #'hel--yank-transform
-                                                yank-transform-functions))
-                ((symbol-function 'push-mark) #'hel-push-mark))
-        (yank))
-      (hel-set-region (mark t) (point) dir)
-      (hel-extend-selection -1)
-      (when (and (derived-mode-p 'prog-mode)
-                 (use-region-p))
-        (indent-region (region-beginning) (region-end))))))
+  (interactive "*p")
+  (if (use-region-p)
+      (let ((char (read-char "Replace with: " t))
+            (deactivate-mark nil))
+        (hel-replace-chars (region-beginning) (region-end) char))
+    (hel-read-char-and-replace (max (point-min) (- (point) count))
+                               (point))))
+
+;; R
+(hel-define-command hel-replace-with-kill-ring (count)
+  "Replace selection content with yanked text from `kill-ring'.
+With no selection, temporarily highlight COUNT characters after point,
+read a character, and replace them (like \\[hel-replace-char] but
+forward)."
+  :multiple-cursors t
+  (interactive "*p")
+  (if (use-region-p)
+      (let ((deactivate-mark nil)
+            (dir (hel-region-direction)))
+        (setq hel--yank-transform-linewise-selection?
+              (hel-linewise-selection-p dir))
+        (delete-region (region-beginning) (region-end))
+        (cl-letf ((yank-transform-functions (cons #'hel--yank-transform
+                                                  yank-transform-functions))
+                  ((symbol-function 'push-mark) #'hel-push-mark))
+          (yank))
+        (hel-set-region (mark t) (point) dir)
+        (hel-extend-selection -1)
+        (when (and (derived-mode-p 'prog-mode)
+                   (use-region-p))
+          (indent-region (region-beginning) (region-end))))
+    (hel-read-char-and-replace (point)
+                               (min (point-max) (+ (point) count)))))
 
 ;; J
 (hel-define-command hel-join-line ()

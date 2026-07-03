@@ -114,6 +114,7 @@ use it."
   "y"   #'hel-copy
   "p"   #'hel-paste-after
   "P"   #'hel-paste-before
+  "r"   #'hel-replace-char
   "R"   #'hel-replace-with-kill-ring
   "C-p" #'hel-paste-pop ;; yank-pop
   "C-n" #'hel-paste-undo-pop
