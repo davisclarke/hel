@@ -211,8 +211,8 @@ Run search session if REGEXP is provided."
                      (-let* (((match-data _closed-overlays) match)
                              ((beg . end) (hel-match match-data)))
                        (if (= beg end)
-                           ;; Ensure forward progress on zero-length matches like
-                           ;; "^" or "$" to avoid an infinite loop.
+                           ;; Ensure forward progress on zero-length matches
+                           ;; like "^" or "$" to avoid an infinite loop.
                            (unless (eobp) (forward-char 1))
                          (push (hel-search-session--highlight-overlay beg end)
                                window-overlays))))))

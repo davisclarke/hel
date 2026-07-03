@@ -1,3 +1,10 @@
+* [Unreleased]
+** Added
+
+- New =r= and =R= commands.
+
+- Integration with [[https://github.com/oantolin/embark][Embark]] package.
+
 * [0.11.0]
 ** Added
 

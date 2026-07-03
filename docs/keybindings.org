@@ -136,12 +136,12 @@ All keys available in Emacs state are also work in Normal state.
 - =gg= ::
   - Move to the beginning of the buffer.
   - With numeric argument go to N/10 of the way from the beginning.
-  - With multiple cursors make the first selection (cursor) the main one. 
+  - With multiple cursors make the first selection (cursor) the main one.
 
 - =ge= or =G= ::
   - Move to the end of the buffer.
   - With a numeric argument, go to line N.
-  - With multiple cursors make the last selection (cursor) the main one. 
+  - With multiple cursors make the last selection (cursor) the main one.
 
 - ={= / =}= or =[p= / =]p= :: Move over paragraphs.
 
@@ -196,9 +196,15 @@ All keys available in Emacs state are also work in Normal state.
   Replace just-pasted text with *next* / *previous* element from ~kill-ring~.
   This is wrappers around Emacs built-in ~yank-pop~ command.
 
+- =r= ::
+  - With active selection replace every character in it with typed one.
+  - Without active selection replace count characters *before* point.
+
 - =R= ::
-  Replace selection with last entry from ~kill-ring~. You can use =C-p= / =C-n=
-  immediately after this command to choose next/previous element from ~kill-ring~.
+  - With active selection replace it with last entry from ~kill-ring~. You
+    can use =C-p= / =C-n= immediately after this command to choose next/previous
+    element from the ~kill-ring~.
+  - Without active selection replace count characters *after* point.
 
 - =~= :: Invert case of characters.
 
@@ -319,7 +325,7 @@ commands like ~mark-word~ which use the word "mark" in this particular sense.
   Left brackets — =(=, =[=, ={= — add extra spaces around the surrounded region.
   If the selection is linewise (make with =x=), the delimiters are placed on
   separate lines.
-  
+
   Right brackets — =)=, =]=, =}= — do the opposite: they remove all spaces or
   newlines from the selection and are inserted tightly.
 
@@ -390,4 +396,3 @@ commands like ~mark-word~ which use the word "mark" in this particular sense.
 
 In Insert state Hel doesn’t bind any keys by default, so you get the standard
 Emacs editing experience here.
-

@@ -123,20 +123,39 @@ This is the most minimal example of the =init.el= file:
 
 ** Differences from Helix text editor
 
-This package is not one-to-one emulation. Some commands are implemented in
-slightly different way (improved from the author's point of view), and some
+This package is not a one-to-one emulation. Some commands are implemented in
+a slightly different way (improved from the author's point of view), and some
 features like keyboard macros, registers, and jumplists already have their
 alternatives in Emacs.
 
-- In Emacs the cursor ("point" in Emacs terms) is located *between* two
-  characters rather than *on* a character like in Helix or Vim. I decided to
-  keep this behavior, instead of emulating original one, as Evil does, because
-  the primary object of interaction in Helix approach is a selection, not the
-  cursor itself.
+- In Emacs the cursor ("point" in Emacs terms) is located *between* two characters
+  rather than *on* a character like in Helix or Vim. I decided to keep this
+  behavior, instead of emulating original one, as Evil does, because the primary
+  object of interaction in Helix approach is a selection, not the cursor itself.
+  This has consequences. In Helix, the cursor is a one-character selection, so
+  Helix always operates on a selection. Hel does not. It has two distinct states:
+  either selection exists, or not. Hel provides some DWIM ("do what I mean"):
 
-- =x= and =X= commands are reworked. They are expand and contract line-wise
-  selection down when cursor is at the end of the selection, or up when
-  cursor is at the beginning of the selection.
+  - =d= / =D=
+
+    - When there is a selection, both =d= and =D= remove it from the buffer: =d=
+      copies the deleted text to the clipboard, =D= does not (Vim taught me
+      that you don't always want to copy deleted text to the clipboard).
+
+    - When there is no selection, common text editors provide two keys for
+      deleting a character: =Backspace= deletes the character before the cursor,
+      =Delete= — after it. Hel adopts this idea: =d= deletes the character before
+      the cursor, =D= — after. None of them touches the clipboard, since it
+      makes no sense to copy a single character into it.
+
+  - =r= / =R=
+
+    - When there is a selection they behave the same as in Helix.
+    - With no selection =r= replaces character before cursor, =R= — after.
+
+- =x= and =X= commands expand or contract line-wise selections down when the
+  cursor is at the end of the selection, or up when the cursor is at the
+  beginning of the selection.
 
 - Inner objects are additionally available directly under =m= prefix to reduce
   keystrokes: =mw= is the same as =miw= — select word.
@@ -150,8 +169,8 @@ alternatives in Emacs.
   creating a selection.
 
 - Keys that are relevant only when multiple cursors are present will be active
-  only in that case (e.g. =K=, =&=, =,= — full list is in =hel-multiple-cursors-mode-map=
-  keymap). This allows to reuse, for example, =K= for documentation lookup or =,= for
+  only in that case (e.g. =K=, =&=, =,= — full list is in ~hel-multiple-cursors-mode-map~
+  keymap). This allows you to reuse, for example, =K= for documentation lookup or =,= for
   localleader while there is only one cursor in the buffer.
 
 - Scrolling keybindings are taken from Vim instead of Helix.
@@ -159,12 +178,12 @@ alternatives in Emacs.
 - =gg= and =G= are taken from Vim. With numeric argument:
 
   - =gg= — goes to N/10 of the way from the beginning of the buffer;
-  - =G= — goes lo line N.
+  - =G= — goes to line N.
 
 - Six easymotion commands are provided:
 
-  - =gw= / =gb= — chose and mark word forward/backward.
-  - =gW= / =gB= — chose and mark WORD forward/backward.
+  - =gw= / =gb= — choose and mark word forward/backward.
+  - =gW= / =gB= — choose and mark WORD forward/backward.
   - =gj= / =gk= — go to line down/up.
 
   Helix provides only =gw= to place 2-char hints at the beginning of each word.
@@ -177,7 +196,6 @@ alternatives in Emacs.
 
 ** Commands that are not implemented
 
-- =r= — replace (TODO)
 - =M-u=, =M-U= — traverse undo tree
 - =q=, =Q= — record keyboard macros
 
