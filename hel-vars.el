@@ -13,6 +13,7 @@
 ;;; Code:
 
 (require 'map)
+(require 'dash)
 
 (defgroup hel nil
   "Hel emulation."
@@ -476,6 +477,7 @@ Default value is 0 - scroll half the screen.")
   "List with used regexp patterns.")
 
 (with-eval-after-load 'savehist
+  (defvar savehist-additional-variables)
   (add-to-list 'savehist-additional-variables 'hel-regex-history))
 
 (defvar hel-undo-commands '(hel-undo hel-redo undo undo-redo)
