@@ -5,9 +5,9 @@
 ;; Author: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Maintainer: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Created: March 27, 2025
-;; Version: 0.11.0
+;; Version: 0.12.0
 ;; Homepage: https://github.com/anuvyklack/hel
-;; Package-Requires: ((emacs "29.1"))
+;; Package-Requires: ((emacs "29.1") (dash "2.19.1") (avy "0.5.0") (pcre2el "1.12") (ultra-scroll "0.6"))
 ;;
 ;; This file is not part of GNU Emacs.
 ;;

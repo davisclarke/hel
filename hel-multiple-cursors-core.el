@@ -1,12 +1,11 @@
-;;; hel-multiple-cursors-core.el -*- lexical-binding: t -*-
+;;; hel-multiple-cursors-core.el --- Fake cursor engine -*- lexical-binding: t -*-
 ;;
 ;; Copyright © 2025-2026 Yuriy Artemyev
 ;;
 ;; Authors: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Maintainer: Yuriy Artemyev <anuvyklack@gmail.com>
-;; Version: 0.11.0
+;; Version: 0.12.0
 ;; Homepage: https://github.com/anuvyklack/hel
-;; Package-Requires: ((emacs "29.1"))
 ;;
 ;; This file is not part of GNU Emacs.
 ;;

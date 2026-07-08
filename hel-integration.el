@@ -4,9 +4,8 @@
 ;;
 ;; Author: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Maintainer: Yuriy Artemyev <anuvyklack@gmail.com>
-;; Version: 0.11.0
+;; Version: 0.12.0
 ;; Homepage: https://github.com/anuvyklack/hel
-;; Package-Requires: ((emacs "29.1"))
 ;;
 ;; This file is not part of GNU Emacs.
 ;;
@@ -684,9 +683,12 @@ If cursor is in read-only area, jump to prompt instead of deleting."
 ;;;; prog-mode
 
 (hel-keymap-set prog-mode-map :state 'normal
-  "g q" #'prog-fill-reindent-defun
   ")"   #'hel-mark-function-forward
   "("   #'hel-mark-function-backward)
+
+(when (<= 30 emacs-major-version)
+  (hel-keymap-set prog-mode-map :state 'normal
+    "g q" #'prog-fill-reindent-defun))
 
 (hel-keymap-set prog-mode-map :state 'insert
   "C-w" #'hel-delete-backward-word)

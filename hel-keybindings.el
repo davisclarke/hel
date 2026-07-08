@@ -4,9 +4,8 @@
 ;;
 ;; Author: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Maintainer: Yuriy Artemyev <anuvyklack@gmail.com>
-;; Version: 0.11.0
+;; Version: 0.12.0
 ;; Homepage: https://github.com/anuvyklack/hel
-;; Package-Requires: ((emacs "29.1"))
 ;;
 ;; This file is not part of GNU Emacs.
 ;;
@@ -389,7 +388,6 @@ use it."
   "V"   '("split root window vertically" . hel-root-window-vsplit)
   "c"   '("close window" . hel-window-delete)
   "o"   '("close all other windows" . delete-other-windows)
-  "p"   '("pin buffer to window" . toggle-window-dedicated)
 
   "w"   '("goto other window" . other-window)
   "h"   '("goto window left" . windmove-left)
@@ -426,7 +424,6 @@ use it."
   "C-V" #'hel-root-window-vsplit
   "C-c" #'hel-window-delete
   "C-o" #'delete-other-windows
-  "C-p" #'toggle-window-dedicated
   ;; Jump over windows
   "C-w" #'other-window
   "C-h" #'windmove-left
@@ -440,6 +437,11 @@ use it."
   "C-b" #'clone-indirect-buffer-other-window
   "C-x" #'scratch-buffer
   "C-z" #'bury-buffer)
+
+(when (<= 30 emacs-major-version)
+  (hel-keymap-set hel-window-map
+    "p"   '("pin buffer to window" . toggle-window-dedicated)
+    "C-p" #'toggle-window-dedicated))
 
 ;;; Insert state
 
