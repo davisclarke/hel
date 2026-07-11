@@ -34,17 +34,16 @@ to one screen so the main cursor stay in sync with fake ones."
     (let* ((y-at-point (or (cdr (posn-x-y (posn-at-point)))
                            0)) ; because sometimes `posn-at-point' returns nil
            (line-height (default-line-height))
-           ;; The number of pixels the view can scroll before point is dragged
-           ;; along the window edge to stay on screen. Scrolling towards the end
-           ;; of the buffer drifts point to the top, towards the beginning — to
-           ;; the bottom.
-           (window-space (if (< delta 0)
-                             (- (window-body-height nil t) y-at-point line-height)
-                           (- y-at-point line-height))))
+           ;; The number of pixels the view can scroll before point will moved
+           ;; to stay on screen.
+           (window-space (if (< 0 delta)
+                             y-at-point
+                           (- (window-body-height nil t) y-at-point line-height))))
       (when (< window-space (abs delta))
         (if hel-multiple-cursors-mode
-            ;; Cap the scroll so point stays put, in sync with the fake cursors.
-            (setq delta (* (if (< delta 0) -1 1) (max 0 (1- window-space))))
+            ;; Do not scroll more than available space.
+            (setq delta (* (hel-sign delta)
+                           (1- window-space)))
           (hel-maybe-deactivate-mark)))
       (if hel-multiple-cursors-mode
           ;; Whatever happens, cursor must not move, so
