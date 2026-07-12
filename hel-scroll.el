@@ -23,10 +23,10 @@
 
 ;;; Configuration
 
-(defcustom hel-scroll-instant-mode nil
-  "If non-nil, perform instant scrolling without animations.
-When enabled, all scroll commands will use `hel--scroll-pixels' for
-immediate scrolling instead of smooth animated scrolling."
+(defcustom hel-smooth-scrolling t
+  "If non-nil, perform smooth animated scrolling.
+When nil, all scroll commands will use `hel--scroll-pixels' for
+immediate scrolling without animations."
   :type 'boolean
   :group 'hel)
 
@@ -40,7 +40,7 @@ immediate scrolling instead of smooth animated scrolling."
 When there are multiple cursors in the buffer the scroll is capped
 to one screen so the main cursor stay in sync with fake ones.
 
-If `hel-scroll-instant-mode' is non-nil, scroll instantly instead."
+If `hel-smooth-scrolling' is nil, scroll instantly instead."
   (unless hel--in-animate-scroll
     (let* ((y-at-point (or (cdr (posn-x-y (posn-at-point)))
                            0)) ; because sometimes `posn-at-point' returns nil
@@ -56,16 +56,16 @@ If `hel-scroll-instant-mode' is non-nil, scroll instantly instead."
             (setq delta (* (hel-sign delta)
                            (1- window-space)))
           (hel-maybe-deactivate-mark)))
-      (if hel-scroll-instant-mode
-          ;; Instant scrolling mode: skip animation
-          (hel--instant-scroll delta)
-        ;; Normal smooth scrolling
-        (if hel-multiple-cursors-mode
-            ;; Whatever happens, cursor must not move, so
-            ;; it stays in sync with the fake cursors.
-            (hel-save-region
-              (hel--animate-scroll delta duration))
-          (hel--animate-scroll delta duration t))))))
+      (if hel-smooth-scrolling
+          ;; Normal smooth scrolling
+          (if hel-multiple-cursors-mode
+              ;; Whatever happens, cursor must not move, so
+              ;; it stays in sync with the fake cursors.
+              (hel-save-region
+                (hel--animate-scroll delta duration))
+            (hel--animate-scroll delta duration t))
+        ;; Instant scrolling: skip animation
+        (hel--instant-scroll delta)))))
 
 (defun hel--instant-scroll (delta)
   "Instantly scroll by DELTA pixels without animation.
@@ -256,14 +256,14 @@ If multiple cursors are active, scroll is restricted only within
 current screen to prevent desynchronization between main cursor
 and fake ones.
 
-If `hel-scroll-instant-mode' is enabled, scrolling is instant."
+If `hel-smooth-scrolling' is nil, scrolling is instant."
   :multiple-cursors nil
   (interactive "P")
   (setq count (if (natnump count)
                   (setq hel-scroll-count count)
                 hel-scroll-count))
   (let ((delta (if (zerop count)
-                   (/ (window-body-height nil t) 2)
+                   (* (/ (window-body-height) 2) (default-line-height))
                  (* count (default-line-height)))))
     (hel-smooth-scroll delta hel-scroll-half-page-duration)
     (list delta hel-scroll-half-page-duration)))
@@ -282,14 +282,14 @@ If multiple cursors are active, scroll is restricted only within
 current screen to prevent desynchronization between main cursor
 and fake ones.
 
-If `hel-scroll-instant-mode' is enabled, scrolling is instant."
+If `hel-smooth-scrolling' is nil, scrolling is instant."
   :multiple-cursors nil
   (interactive "P")
   (setq count (if (natnump count)
                   (setq hel-scroll-count count)
                 hel-scroll-count))
   (let ((delta (- (if (zerop count)
-                      (/ (window-body-height nil t) 2)
+                      (* (/ (window-body-height) 2) (default-line-height))
                     (* count (default-line-height))))))
     (hel-smooth-scroll delta hel-scroll-half-page-duration)
     (list delta hel-scroll-half-page-duration)))
@@ -303,7 +303,7 @@ If `hel-scroll-instant-mode' is enabled, scrolling is instant."
 If multiple cursors are active, rotate the main selection forward COUNT times
 instead.
 
-If `hel-scroll-instant-mode' is enabled, scrolling is instant."
+If `hel-smooth-scrolling' is nil, scrolling is instant."
   :multiple-cursors nil
   (interactive "p")
   (or count (setq count 1))
@@ -320,7 +320,7 @@ If `hel-scroll-instant-mode' is enabled, scrolling is instant."
 If multiple cursors are active, rotate the main selection COUNT times
 backward instead.
 
-If `hel-scroll-instant-mode' is enabled, scrolling is instant."
+If `hel-smooth-scrolling' is nil, scrolling is instant."
   :multiple-cursors nil
   (interactive "p")
   (or count (setq count 1))
@@ -335,7 +335,7 @@ If `hel-scroll-instant-mode' is enabled, scrolling is instant."
 (hel-define-command hel-scroll-line-down (&optional count)
   "Scroll the window COUNT lines downwards.
 
-If `hel-scroll-instant-mode' is enabled, scrolling is instant."
+If `hel-smooth-scrolling' is nil, scrolling is instant."
   :multiple-cursors nil
   (interactive "p")
   (or count (setq count 1))
@@ -360,7 +360,7 @@ If `hel-scroll-instant-mode' is enabled, scrolling is instant."
 (hel-define-command hel-scroll-line-up (&optional count)
   "Scroll the window COUNT lines upwards.
 
-If `hel-scroll-instant-mode' is enabled, scrolling is instant."
+If `hel-smooth-scrolling' is nil, scrolling is instant."
   :multiple-cursors nil
   (interactive "p")
   (or count (setq count 1))
@@ -386,7 +386,7 @@ If `hel-scroll-instant-mode' is enabled, scrolling is instant."
 (hel-define-command hel-scroll-line-to-eye-level ()
   "Smoothly scroll current line not to the very top of the window.
 
-If `hel-scroll-instant-mode' is enabled, scrolling is instant."
+If `hel-smooth-scrolling' is nil, scrolling is instant."
   :multiple-cursors nil
   (interactive)
   (let* ((posn-y-target (ceiling (/ (window-body-height nil t) 5)))
@@ -394,9 +394,9 @@ If `hel-scroll-instant-mode' is enabled, scrolling is instant."
                          0)) ;; because sometimes `posn-at-point' returns nil
          (delta (- y-at-point
                    posn-y-target)))
-    (if hel-scroll-instant-mode
-        (hel--instant-scroll delta)
-      (hel--animate-scroll delta hel-scroll-half-page-duration))))
+    (if hel-smooth-scrolling
+        (hel--animate-scroll delta hel-scroll-half-page-duration)
+      (hel--instant-scroll delta))))
 
 (put 'hel-scroll-line-to-eye-level 'scroll-command t)
 
@@ -404,7 +404,7 @@ If `hel-scroll-instant-mode' is enabled, scrolling is instant."
 (hel-define-command hel-scroll-line-to-center ()
   "Smoothly scroll current line to the center of the window.
 
-If `hel-scroll-instant-mode' is enabled, scrolling is instant."
+If `hel-smooth-scrolling' is nil, scrolling is instant."
   (interactive)
   :multiple-cursors nil
   (let* ((posn-y-target (ceiling (/ (window-body-height nil t) 2)))
@@ -412,9 +412,9 @@ If `hel-scroll-instant-mode' is enabled, scrolling is instant."
                          0)) ;; because sometimes `posn-at-point' returns nil
          (delta (- y-at-point
                    posn-y-target)))
-    (if hel-scroll-instant-mode
-        (hel--instant-scroll delta)
-      (hel--animate-scroll delta hel-scroll-half-page-duration))))
+    (if hel-smooth-scrolling
+        (hel--animate-scroll delta hel-scroll-half-page-duration)
+      (hel--instant-scroll delta))))
 
 (put 'hel-scroll-line-to-center 'scroll-command t)
 
@@ -422,18 +422,18 @@ If `hel-scroll-instant-mode' is enabled, scrolling is instant."
 (hel-define-command hel-scroll-line-to-top ()
   "Smoothly scroll current line to the top of the window.
 
-If `hel-scroll-instant-mode' is enabled, scrolling is instant."
+If `hel-smooth-scrolling' is nil, scrolling is instant."
   :multiple-cursors nil
   (interactive)
   (hel-save-region
-    (if hel-scroll-instant-mode
-        (hel--instant-scroll (-> (cdr (posn-x-y (posn-at-point)))
+    (if hel-smooth-scrolling
+        (hel--animate-scroll (-> (cdr (posn-x-y (posn-at-point)))
                                  (or 0) ; because sometimes `posn-at-point' returns nil
-                                 (1-))) ; minus 1 pixel so that the cursor doesn't move
-      (hel--animate-scroll (-> (cdr (posn-x-y (posn-at-point)))
+                                 (1-)) ; minus 1 pixel so that the cursor doesn't move
+                             hel-scroll-half-page-duration)
+      (hel--instant-scroll (-> (cdr (posn-x-y (posn-at-point)))
                                (or 0) ; because sometimes `posn-at-point' returns nil
-                               (1-)) ; minus 1 pixel so that the cursor doesn't move
-                           hel-scroll-half-page-duration))
+                               (1-)))) ; minus 1 pixel so that the cursor doesn't move
     (recenter 0)))
 
 (put 'hel-scroll-line-to-top 'scroll-command t)
@@ -442,7 +442,7 @@ If `hel-scroll-instant-mode' is enabled, scrolling is instant."
 (hel-define-command hel-scroll-line-to-bottom ()
   "Smoothly scroll current line to the bottom of the window.
 
-If `hel-scroll-instant-mode' is enabled, scrolling is instant."
+If `hel-smooth-scrolling' is nil, scrolling is instant."
   :multiple-cursors nil
   (interactive)
   (let* ((win-height (window-body-height nil t))
@@ -451,9 +451,9 @@ If `hel-scroll-instant-mode' is enabled, scrolling is instant."
                          0))
          (delta (- win-height y-at-point line-height 1)))
     (hel-save-region
-      (if hel-scroll-instant-mode
-          (hel--instant-scroll (- delta))
-        (hel--animate-scroll (- delta) hel-scroll-half-page-duration)))))
+      (if hel-smooth-scrolling
+          (hel--animate-scroll (- delta) hel-scroll-half-page-duration)
+        (hel--instant-scroll (- delta))))))
 
 (put 'hel-scroll-line-to-bottom 'scroll-command t)
 
