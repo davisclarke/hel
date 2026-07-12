@@ -329,10 +329,8 @@ Return CURSOR."
 (defun hel-show-fake-cursor (cursor)
   "Restore fake-CURSOR visibility if it was previously hidden with
 `hel-hide-fake-cursor'."
-  (let ((point (overlay-get cursor 'point))
-        (mark (overlay-get cursor 'mark)))
-    (hel--set-cursor-overlay cursor point)
-    (hel--set-fake-region-overlay cursor)))
+  (hel--set-cursor-overlay cursor (overlay-get cursor 'point))
+  (hel--set-fake-region-overlay cursor))
 
 (defun hel-fake-cursor-p (overlay)
   "Return t if an OVERLAY is a fake cursor."
