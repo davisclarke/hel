@@ -115,7 +115,8 @@ a fully consistent state, so ending mid-way is safe."
          (start-col (or (car (posn-x-y (posn-at-point)))
                         0)) ; because sometimes `posn-at-point' returns nil
          (now (float-time))
-         (traveled 0)   ; Signed number of pixels scrolled so far.
+         (traveled 0)   ; Signed number of pixels scrolled so far (integer).
+         (traveled-frac 0.0) ; Fractional accumulator for precise tracking.
          (target delta) ; Signed number of pixels to scroll in total.
          ;; A pulse is one animation run spanning many frames: fast at the
          ;; start and slowing to a stop at the end. A scroll key tapped
@@ -123,6 +124,7 @@ a fully consistent state, so ending mid-way is safe."
          ;; animation from the current position, which produces this "pulse"
          ;; effect.
          (pulse-origin 0)   ; TRAVELED at the start of the current pulse.
+         (pulse-origin-frac 0.0) ; Fractional offset at pulse start.
          (pulse-dist delta) ; Signed distance of the current pulse.
          (pulse-start now)  ; Timestamp the current animation began.
          (pulse-duration duration)
@@ -155,10 +157,11 @@ a fully consistent state, so ending mid-way is safe."
                                ((get cmd 'hel-scroll))
                                ((delta duration) (funcall cmd)))
                         ;; Extend the TARGET and restart the pulse from the
-                        ;; current position.
+                        ;; current position, preserving fractional pixels.
                         (progn
                           (cl-incf target delta)
                           (setq pulse-origin traveled
+                                pulse-origin-frac traveled-frac
                                 pulse-dist (- target traveled)
                                 pulse-start (float-time)
                                 pulse-duration duration))
@@ -186,20 +189,18 @@ a fully consistent state, so ending mid-way is safe."
                       (setq frame-deadline (float-time)))
                   (let* ((tau (min 1.0 (/ (- (float-time) pulse-start)
                                           pulse-duration)))
-                         ;; TARGET-POS is where the view should be right now:
-                         ;; PULSE-ORIGIN plus the eased part of PULSE-DIST.
-                         ;; It's recomputed from scratch every frame (instead
-                         ;; of adding previous steps), so rounding never
-                         ;; accumulates, and the scroll lands exactly on target
-                         ;; once TAU reaches 1.
-                         (target-pos (+ pulse-origin
-                                        (round (* pulse-dist (hel--scroll-ease tau)))))
+                         ;; TARGET-POS-FRAC is the target position as a float,
+                         ;; combining the pulse origin with fractional tracking.
+                         (target-pos-frac (+ pulse-origin-frac
+                                            (* pulse-dist (hel--scroll-ease tau))))
+                         ;; STEP is the difference since we last moved (integer pixels).
                          (step (hel-clamp (- max-step)
-                                          (- target-pos traveled)
+                                          (- (round target-pos-frac) traveled)
                                           max-step)))
                     (when (/= step 0)
                       (hel--scroll-pixels step)
                       (cl-callf + traveled step)
+                      (setq traveled-frac target-pos-frac)
                       (when (and hel-scroll-hide-cursor
                                  (not restore-cursor-fn)
                                  (/= (point) init-point))
