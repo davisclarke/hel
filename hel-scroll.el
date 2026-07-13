@@ -115,16 +115,13 @@ a fully consistent state, so ending mid-way is safe."
          (start-col (or (car (posn-x-y (posn-at-point)))
                         0)) ; because sometimes `posn-at-point' returns nil
          (now (float-time))
-         (traveled 0)   ; Signed number of pixels scrolled so far (integer).
-         (traveled-frac 0.0) ; Fractional accumulator for precise tracking.
+         (vscroll-start (window-vscroll nil t)) ; Starting position in pixels
          (target delta) ; Signed number of pixels to scroll in total.
          ;; A pulse is one animation run spanning many frames: fast at the
          ;; start and slowing to a stop at the end. A scroll key tapped
          ;; mid-flight (see the `input-pending-p' branch) restarts the
          ;; animation from the current position, which produces this "pulse"
          ;; effect.
-         (pulse-origin 0)   ; TRAVELED at the start of the current pulse.
-         (pulse-origin-frac 0.0) ; Fractional offset at pulse start.
          (pulse-dist delta) ; Signed distance of the current pulse.
          (pulse-start now)  ; Timestamp the current animation began.
          (pulse-duration duration)
@@ -147,7 +144,7 @@ a fully consistent state, so ending mid-way is safe."
                     (let ((step (hel-clamp (- max-step) remaining max-step)))
                       (hel--scroll-pixels step)
                       (cl-decf remaining step))))
-              (while (/= traveled target)
+              (while (/= (window-vscroll nil t) (+ vscroll-start target))
                 (cond
                  ((input-pending-p)
                   (let ((event (read-event)))
@@ -157,18 +154,15 @@ a fully consistent state, so ending mid-way is safe."
                                ((get cmd 'hel-scroll))
                                ((delta duration) (funcall cmd)))
                         ;; Extend the TARGET and restart the pulse from the
-                        ;; current position, preserving fractional pixels.
+                        ;; current position.
                         (progn
                           (cl-incf target delta)
-                          (setq pulse-origin traveled
-                                pulse-origin-frac traveled-frac
-                                pulse-dist (- target traveled)
+                          (setq pulse-dist (- target)
                                 pulse-start (float-time)
                                 pulse-duration duration))
                       ;; Not a scroll key — stop scrolling and return the event
                       ;; back to the command loop.
-                      (push event unread-command-events)
-                      (setq target traveled))))
+                      (push event unread-command-events))))
                  ;; Too early for the next frame. Busy wait until the DEADLINE.
                  ;;   HACK: Wait in `read-event', which blocks in the C event
                  ;; loop without spinning the CPU, temporarily suspending
@@ -189,18 +183,17 @@ a fully consistent state, so ending mid-way is safe."
                       (setq frame-deadline (float-time)))
                   (let* ((tau (min 1.0 (/ (- (float-time) pulse-start)
                                           pulse-duration)))
-                         ;; TARGET-POS-FRAC is the target position as a float,
-                         ;; combining the pulse origin with fractional tracking.
-                         (target-pos-frac (+ pulse-origin-frac
-                                            (* pulse-dist (hel--scroll-ease tau))))
-                         ;; STEP is the difference since we last moved (integer pixels).
+                         ;; ABSOLUTE-TARGET is the absolute window position:
+                         ;; starting position plus the eased part of the distance.
+                         (absolute-target (+ vscroll-start
+                                            (round (* pulse-dist (hel--scroll-ease tau)))))
+                         ;; STEP is the delta from the current actual vscroll position.
+                         (current-vscroll (window-vscroll nil t))
                          (step (hel-clamp (- max-step)
-                                          (- (round target-pos-frac) traveled)
+                                          (- absolute-target current-vscroll)
                                           max-step)))
                     (when (/= step 0)
                       (hel--scroll-pixels step)
-                      (cl-callf + traveled step)
-                      (setq traveled-frac target-pos-frac)
                       (when (and hel-scroll-hide-cursor
                                  (not restore-cursor-fn)
                                  (/= (point) init-point))
