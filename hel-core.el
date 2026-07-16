@@ -91,10 +91,6 @@
         ;; We will update its content on every Hel state change.
         (cl-pushnew 'hel-mode-map-alist emulation-mode-map-alists)
         (hel-load-whitelists)
-        ;; Multiple cursors related keys should take precedence over
-        ;; all others when `hel-multiple-cursors-mode' is active.
-        (setf (alist-get 'hel-multiple-cursors-mode minor-mode-overriding-map-alist)
-              hel-multiple-cursors-mode-map)
         (add-hook 'pre-command-hook  #'hel--pre-command-hook 90 t)
         (add-hook 'post-command-hook #'hel--post-command-hook 90 t)
         (add-hook 'after-revert-hook #'hel-disable-multiple-cursors-mode 90 t)
@@ -112,7 +108,6 @@
     (hel-disable-multiple-cursors-mode)
     (setq hel-this-command nil
           hel--input-cache nil)
-    (cl-callf map-delete minor-mode-overriding-map-alist 'hel-multiple-cursors-mode)
     (hel-disable-current-state)
     (activate-input-method hel-input-method)))
 
@@ -466,14 +461,23 @@ according to the Hel STATE."
               ;; Edebug takes precedence over all other keymaps
               ,@(if (bound-and-true-p edebug-mode)
                     (list `(edebug-mode . ,edebug-mode-map)))
+              ;; Multiple cursors related keys should take precedence over
+              ;; all others when `hel-multiple-cursors-mode' is active.
+              ,@(if-let* ((hel-multiple-cursors-mode)
+                          (map (hel-get-nested-hel-keymap
+                                hel-multiple-cursors-mode-map state)))
+                    (list `(hel-multiple-cursors-mode . ,map)))
               ;; Hel buffer local overriding map
-              ,@(if-let* ((map (hel-get-nested-hel-keymap hel-overriding-local-map state)))
+              ,@(if-let* ((map (hel-get-nested-hel-keymap
+                                hel-overriding-local-map state)))
                     (list `(:hel-overriding-local-map . ,map)))
               ;; Hel keymaps nested in other keymaps
-              ,@(cl-loop for keymap in (current-active-maps)
-                         for hel-map = (hel-get-nested-hel-keymap keymap state)
-                         when hel-map
-                         collect (cons (hel-minor-mode-for-keymap keymap) hel-map))
+              ,@(-keep (lambda (keymap)
+                         ;; Unless already collected above.
+                         (unless (eq keymap hel-multiple-cursors-mode-map)
+                           (if-let* ((hel-map (hel-get-nested-hel-keymap keymap state)))
+                               (cons (hel-minor-mode-for-keymap keymap) hel-map))))
+                       (current-active-maps))
               ;; Main state keymap
               ,(cons (hel-state-property state :variable)
                      (hel-state-property state :keymap))))))
