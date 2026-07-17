@@ -184,11 +184,11 @@ a fully consistent state, so ending mid-way is safe."
 The curve is selected by `hel-scroll-easing'. Every curve but `linear' is
 an ease-out: fast at the start, slowing to a gentle stop at X = 1."
   (pcase hel-scroll-easing
-    ('linear x)
-    ('cubic (- 1.0 (expt (- 1.0 x) 3)))
+    ('linear  x)
+    ('cubic   (- 1.0 (expt (- 1.0 x) 3)))
     ('quartic (- 1.0 (expt (- 1.0 x) 4)))
-    ('sine (sin (* x (/ float-pi 2))))
-    (_ (- 1.0 (expt (- 1.0 x) 2))))) ; quadratic (default)
+    ('sine    (sin (* x (/ float-pi 2))))
+    (_        (- 1.0 (expt (- 1.0 x) 2))))) ; quadratic (default)
 
 (defun hel--scroll-pixels (delta)
   "Scroll the current window by DELTA pixels.
