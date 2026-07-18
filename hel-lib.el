@@ -932,10 +932,10 @@ or nil if nothing found."
       ;; else
       (-let ((limits (bounds-of-thing-at-point 'defun))
              ((&plist :remove (left . right) :regexp :balanced)
-              (if (null spec)
-                  `(:remove ,(cons (char-to-string char)
-                                   (char-to-string char)))
-                spec)))
+              (if (plist-member spec :remove)
+                  spec
+                `(:remove ,(cons (char-to-string char)
+                                 (char-to-string char))))))
         (hel-surround-4-bounds-at-point left right limits regexp balanced)))))
 
 (declare-function org-at-table-p  "org-table")
